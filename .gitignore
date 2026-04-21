@@ -1,7 +1,12 @@
 # --- Project Specific (Data & Config) ---
-# Ignore all dynamic data files in the data directory
-# but keep the directory itself
+# Ignore all files in data/
 data/*
+
+# Ensure the live ship data cache is ignored even if the folder is negated
+data/ship_cache.json
+
+# Do NOT ignore these specific files
+!data/ship_cache.json.example
 !data/.gitkeep
 
 # Ignore environment secrets
