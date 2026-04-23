@@ -1,0 +1,29 @@
+# Ignore local data (volumes handle this at runtime)
+data/
+scripts/
+config/
+
+# Ignore Python artifacts
+**/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.pytest_cache/
+.mypy_cache/
+
+# Ignore environment secrets
+.env
+.env.*
+
+# Ignore Git metadata
+.git
+.gitignore
+
+# Ignore Docker metadata
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignore IDE settings
+.vscode/
+.idea/

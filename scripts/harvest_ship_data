@@ -4,6 +4,7 @@ import asyncio
 import websockets
 import json
 import os
+import sys
 import configparser
 import argparse
 from websockets.exceptions import ConnectionClosed
@@ -46,7 +47,6 @@ async def get_static_chunk(url, api_key, duration, bbox_chunk):
     return messages
 
 async def run_chunked_harvest(**kwargs):
-    # Unpack kwargs
     url = kwargs.get('url')
     api_key = kwargs.get('api_key')
     duration = kwargs.get('duration', 60)
@@ -132,15 +132,17 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(args.config)
     s = SCRIPT_SECTION
+    if not config.getboolean(s, 'enabled', fallback=False):
+        sys.exit(0)
 
     try:
         harvest_params = {
+            'workdir': config.get('common', 'workdir', fallback='.'),
             'url': config.get(s, 'url'),
-            'api_key': config.get(s, 'api_key'),
+            'api_key': config.get('shipping', 'api_key'),
             'duration': config.getint(s, 'listen_for_static_data'),
             'full_bbox': json.loads(config.get(s, 'harvest_bbox')),
             'chunks': config.getint(s, 'harvest_chunks'),
-            'workdir': config.get('common', 'workdir'),
             'db_rel_path': config.get(s, 'static_database')
         }
         asyncio.run(run_chunked_harvest(**harvest_params))

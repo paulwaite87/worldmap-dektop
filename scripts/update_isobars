@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import configparser
 import warnings
 import logging
@@ -69,7 +70,7 @@ def download_mslp_only(grib_url, grib_path):
 
             f.write(chunk)
 
-def plot_isobars(grib_path, isobar_color, label_fontsize, output_path):
+def plot_isobars(grib_path, isobar_color, label_fontsize, label_outline, output_path):
     print("Reading GRIB2 file...")
     ds = xr.open_dataset(
         grib_path,
@@ -109,21 +110,20 @@ def plot_isobars(grib_path, isobar_color, label_fontsize, output_path):
             if isinstance(artist, mcoll.LineCollection):
                 artist.set_path_effects(outline_effect)
 
-    # 2. Draw Labels
+    # Draw Labels
     contour_labels = plt.clabel(cs, fmt='%d', fontsize=label_fontsize, inline=True, 
                        colors=isobar_color, inline_spacing=4)
-    if contour_labels:
+    if contour_labels and label_outline:
         for txt in contour_labels:
             txt.set_path_effects(outline_effect)
     
-    # 3. Coastlines
-    coast = ax.coastlines(linewidth=1.0, color=isobar_color, alpha=0.8)
-    # FeatureArtist for coastlines handles effects differently; we apply to its artist
-    coast.set_path_effects(outline_effect)
+    # Coastlines: disabled for now - seems to not have much effect
+    #coast = ax.coastlines(linewidth=1.0, color=isobar_color, alpha=0.8)
+    #coast.set_path_effects(outline_effect)
 
     # Final formatting
     ax.set_frame_on(False)
-    ax.set_position([0, 0, 1, 1])
+    ax.set_position((0.0, 0.0, 1.0, 1.0))
     ax.patch.set_alpha(0)  
     fig.patch.set_alpha(0) 
     plt.axis('off')
@@ -137,7 +137,8 @@ def plot_isobars(grib_path, isobar_color, label_fontsize, output_path):
 def update_isobars(**kwargs):
     base_url = kwargs.get('base_url')
     isobar_color = kwargs.get('isobar_color', 'white')
-    font_size = kwargs.get('font_size', 8)
+    label_fontsize = int(kwargs.get('font_size', 8))
+    label_outline = bool(kwargs.get('label_outline', False))
     workdir = kwargs.get('workdir', '..')
     outfile = kwargs.get('outfile')
 
@@ -149,7 +150,7 @@ def update_isobars(**kwargs):
         grib_url, date_str, run = find_latest_gfs_file(base_url)
         print(f"Latest GFS run: {date_str} {run}Z")
         download_mslp_only(grib_url, grib_path)
-        plot_isobars(grib_path, isobar_color, font_size, output_path)
+        plot_isobars(grib_path, isobar_color, label_fontsize, label_outline, output_path)
     finally:
         if os.path.exists(grib_path):
             os.remove(grib_path)
@@ -164,13 +165,16 @@ if __name__ == "__main__":
     config = configparser.ConfigParser()
     config.read(args.config)
     s = SCRIPT_SECTION
+    if not config.getboolean(s, 'enabled', fallback=False):
+        sys.exit(0)
 
     try:
         params = {
+            'workdir': config.get('common', 'workdir'),
             'base_url': config.get(s, 'url'),
             'isobar_color': config.get(s, 'isobar_color', fallback='white'),
-            'font_size': config.getint(s, 'min_mag', fallback=8),
-            'workdir': config.get('common', 'workdir'),
+            'label_fontsize': config.getint(s, 'label_fontsize', fallback=10),
+            'label_outline': config.getboolean(s, 'label_outline', fallback=False),
             'outfile': config.get(s, 'outfile'),
         }
         update_isobars(**params)

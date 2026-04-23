@@ -5,14 +5,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      # Map the host AIS_API_KEY to the container
+      - AIS_API_KEY=${AIS_API_KEY}
+      - TZ=Pacific/Auckland
     restart: unless-stopped
     volumes:
       - ./data:/opt/project/data
-      - ./symbols:/opt/project/symbols
       - ./scripts:/opt/project/scripts
       - ./config:/opt/project/config
-    environment:
-      - TZ=Pacific/Auckland
     healthcheck:
       # Specifically check for an updated file in the data directory
       test: ["CMD", "find", "/opt/project/data/quake_markers.txt", "-mmin", "-30"]

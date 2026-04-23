@@ -31,9 +31,4 @@ COPY . .
 RUN chmod +x *.sh && uv sync --frozen --no-dev
 
 # The daemon manages the shift between World map rendering and Ship data harvesting
-CMD [ "python", "map_system_daemon.py", \
-    "--map-updater", "./do_map_updates.sh", "--update-sleep", "120", \
-    "--harvester", "./do_harvest_shipdata.sh", "--harvest-sleep", "600", \
-    "--morning", "09:00", \
-    "--evening", "23:00" \
-]
+CMD ["python", "map_system_daemon.py", "--config", "config/worldmap.conf"]

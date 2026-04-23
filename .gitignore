@@ -28,9 +28,6 @@ build/
 *.egg-info/
 
 # --- Docker ---
-.dockerignore
-# (Wait, don't ignore .dockerignore itself, but you might ignore
-# local docker-compose overrides if you use them)
 docker-compose.override.yml
 
 # --- OS & IDEs ---

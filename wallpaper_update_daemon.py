@@ -120,7 +120,9 @@ class MapRefreshHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
+    once_only = False
     parser = argparse.ArgumentParser(description="World Map Wallpaper Refresh Daemon")
+    parser.add_argument("--once", action="store_true", dest="once_only", default=False)
     parser.add_argument("--directory", type=str, required=True, help="Directory to watch for new renders")
     parser.add_argument("--suffix", type=str, default="worldmap.jpg",
                         help="Suffix of the render files (e.g. worldmap.jpg)")
@@ -131,6 +133,9 @@ if __name__ == "__main__":
         logger.error(f"Path not found: {watch_path}")
         sys.exit(1)
 
+    if args.once_only:
+        logger.info("Running once only")
+
     handler = MapRefreshHandler(str(watch_path), args.suffix)
 
     # Perform initial refresh on startup
@@ -138,6 +143,12 @@ if __name__ == "__main__":
     if initial_map:
         logger.info(f"Startup refresh: {initial_map}")
         handler.apply_wallpaper(initial_map)
+    else:
+        logger.info(f"No initial map found")
+
+    # A once-only call, so exit
+    if args.once_only:
+        sys.exit(0)
 
     # Initialize Watchdog
     observer = Observer()

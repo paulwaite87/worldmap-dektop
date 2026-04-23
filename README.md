@@ -1,54 +1,84 @@
-# Live World Map for Mac and Linux
+# Live World Map for Linux
 
 ## What is this?
 
-A script that uses `xplanet` to make your desktop wallpaper a live map of the world using NASA imagery.
+A Docker container-based system that features a number of data acquisition scripts for Clouds, Isobars, Storm tracking, Earthquakes, Volcanoes, and Shipping before utilizing `xplanet` to render the image for your desktop. There is also a daemon which will monitor the folder this image is generated in, and update your desktop wallpaper with what is essentially a live view of what's happening on the planet.
 
-![Screenshot on macOS](docs/screenshot-mac.png)
+![World Map Example](docs/worldmap-example.jpg)
 
 ## How do I use this?
 
-1. Install `xplanet` (use the correct line for your OS):  
-	```bash
-    brew install xplanet            # MacOS with Homebrew - see https://brew.sh/
-	sudo dnf install -y xplanet     # Fedora, Red Hat
-    sudo apt-get install -y xplanet # Ubuntu, Mint, Debian
-    sudo pacman -S xplanet          # Arch Linux
-	```
-2. Clone the repository:
-    ```bash
-    cd ~/00blair/gitrepos/ # or wherever you keep this stuff
-    git clone -v https://github.com/blairw/liveworldmap
-    ```
-3. Edit the config files `config/config.conf` and `cronjob.sh` to point the correct paths for your setup (and change the `myresolution` variable in the latter, to suit your screen!). 
-4. Open your crontab for editing:
-	```bash
-	export EDITOR=nano # I don't like vim.. sorry..
-	crontab -e
-	```
-5. Put in an entry for the script:
-    ```bash
-    PATH=/usr/local/bin:/usr/bin:/bin
-    */5 * * * * /Users/blair/00blair/gitrepos/liveworldmap/cronjob.sh
-    ```
-(You only need that first line with `PATH` if you're using Mac.)
+### Clone the repository:
+    cd /your/preferred/workspace
+    git clone -v https://github.com/paulwaite87/WorldMap
 
-Happy wallpaper-cronning! :)
+### Prerequisites: Docker Installation
+Before running this project, you must have Docker and Docker Compose installed on your system. For Ubuntu users, it is highly recommended to install Docker via the official Docker repository rather than the default apt archives to ensure you have the latest version compatible with modern systemd and container features. You can verify your installation by running docker --version in your terminal.
 
-## I'm using Linux, but not Fedora
+If you need some guidance on this a good place to look is here https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-20-04
 
-![Screenshot on Linux](docs/screenshot-linux.png)
+Despite the '20-04' at the end of the link, this tutorial is also fine for later versions of Ubuntu.
 
-- If you're using MATE or GNOME you should be able to just edit `cronjob.sh` to suit your needs and use `apt-get` or whatever instead of `dnf`.
-- I think you might be able to get this working on KDE if you use KDE? Sorry I can't test this because I don't have any KDE installs, personally find KDE a bit too cluttered. This looks promising though: https://www.reddit.com/r/kde/comments/65pmhj/change_wallpaper_from_terminal/
+To avoid having to use sudo with every command, ensure your user is added to the docker group. After installation, run `sudo usermod -aG docker $USER` and log out and back in for the changes to take effect. This will allow you to manage containers and orchestration seamlessly while working within the repository.
 
-## I'm using Windows
+### Configuration
+Configuration files live in the `config` folder. You can change the way the system behaves with those.
 
-I'm sorry, this doesn't work on Windows right now. If you can get it working, that would be amazing!
+In particular edit `common.conf` and set the WORLDMAP_GEOMETRY to match your desktop.
 
-## Acknowledgements
+Next, edit `worldmap.conf` and in there you can see a section named `daemon`. The daemon which does all the work is `map_system_daemon.py` and it reads this section to figure out how to operate.
 
-- **Day imagery** `world.topo.bathy.200412.3x5400x2700.jpg`:  
-	NASA (2004), 'Blue Marble Next Generation', _Visible Earth_, https://visibleearth.nasa.gov/view.php?id=73909
-- **Night imagery** `dnb_land_ocean_ice.2012.3600x1800.jpg`:  
-  NASA (2012), 'Night Lights 2012 - Flat Map', _Visible Earth_, https://visibleearth.nasa.gov/view.php?id=79765 
+There are two processes that the daemon executes, the first being the map update which generates a new World map image. This runs from the time specified as `morning` in the config file until the time specified in `evening`.
+
+The second process is a ship data harvester. The `harvester_enabled` defaults to False, so to make it run from `evening` through to `morning` set that to True. What this does is listen for ship broadcasting their `ShipStaticData` message. That message tells us some basics about the ship like name, dimensions, type etc. and we store the retrieved information in `data/ship_cache.json`. That file is read by the map updater so it can fill in the details of any ships it discovers in the areas we are looking in (see the bbox setting in the [shipping_markers] section of the config file).
+
+There are already around 15,000 ships recorded in that cache file, but there are many more at sea, hence the option to scan the globe for these repeatedly. The static data messages are only broadcast infrequently so we just keep on until we grab most if not all of them.
+
+The two sleep settings are the interval in seconds to sleep after each process has run.
+
+### Running the updater
+The update machinery all runs in the Docker container. To start it all up (this will pull and build everything first, if not already built) use the following command from the root directory of the repo you just cloned.
+
+    docker compose up -d
+
+To see what it's doing just something like:
+    
+    docker logs -f worldmap
+
+If this all works as it should, you will see the logs showing it is generating what's needed. A healthy cycle will look something like this in the logs:
+
+    Beginning map refresh
+    create_map_logger: INFO: data/cloud_map.jpg is new enough
+    create_map_logger: INFO: finished in 0.2 s
+    Latest GFS run: 20260421 18Z
+    Reading GRIB2 file...
+    Isobar map saved: ./data/global_isobars.png
+    Markers generated for 1 storms (Lats: 8.0 to 29.6)
+    https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv
+    Updated 7 quakes (Mag >= 5.0) in /opt/project/data/quake_markers.txt
+    Loaded 15392 ships. Filtering for: ['Tanker', 'Cargo']
+    Success! Processed 65 markers.
+
+The resulting World map will be placed in the `data` folder. It will be prefixed with a Unix timestamp (after the previous image is removed). The different image names each time help certain desktops refresh as they should when you update the wallpaper.
+
+Note that the map update will itself indulge in a bit of Ship Static Data harvesting. It does that after listening for ship position status data, but not for very long. The static data is broadcast much less frequently than position data, so it isn't worth hanging around very long when updating the map. The harvester (see below) does a much better job of that.
+
+### Some further notes
+If you don't want a given section displayed (eg volcanoes are pretty much static day-to-day and just clutter the map, so I generally don't display them) you can disable them by commenting out the relevant line in `config/xplanet.conf`.
+
+Storms will drop off the map when the `expiry_days` (see worldmap.conf [storm_markers] section) is exceeded.
+
+With shipping icons there are basically two variants Cargo (has a 'C' in the middle) and Tankers ('T' in the middle). They each have their own default colours, but these can also vary if the system detects their draught (loading) has decreased. Shipping with speeds less than 1.0 knots, or flagged as moored are NOT displayed. This avoids masses of ship icons overlaying each other in port locations making a mess on the map.
+
+
+### Running the harvester
+As mentioned above this is done by the same daemon. You just have to set `harvester_enabled` True.
+
+Set the time you want the harvester to take over from the map updater. The two processes are mutually exclusive, so I have provided `morning` and `evening` times for you.
+
+The map updater runs between morning and evening. The harvester, if enabled, runs overnight until morning. If it isn't enabled, nothing happens overnight.
+
+### Wallpaper updates
+There is a daemon to run on your local host which should hopefully update your background/wallpaper image. This is `wallpaper_update_daemon.py`. You run it by running `wallpaper_updater.sh` from the command line.
+
+This daemon is, in theory, able to update for a number of desktops including Gnome, KDE, Linux Mint Cinammon and Mate, and XFCE. However these things being as they are, I expect there will be issues with YOUR particular desktop, so I am open to improvements!
