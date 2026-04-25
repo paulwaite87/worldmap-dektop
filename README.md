@@ -77,17 +77,34 @@ To see what it's doing just something like:
 
 If this all works as it should, you will see the logs showing it is generating what's needed. A healthy cycle will look something like this in the logs:
  
-    Beginning map refresh
-    create_map_logger: INFO: data/cloud_map.jpg is new enough
-    create_map_logger: INFO: finished in 0.2 s
-    Latest GFS run: 20260421 18Z
-    Reading GRIB2 file...
-    Isobar map saved: ./data/global_isobars.png
-    Markers generated for 1 storms (Lats: 8.0 to 29.6)
-    https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv
-    Updated 7 quakes (Mag >= 5.0) in /opt/project/data/quake_markers.txt
-    Loaded 15392 ships. Filtering for: ['Tanker', 'Cargo']
-    Success! Processed 65 markers.
+    worldmap  | 2026-04-26 10:22:13,375 [INFO] worldmap.daemon: WorldMap System Daemon Started
+    worldmap  | 2026-04-26 10:22:13,376 [INFO] worldmap.lib.config: Configuration loaded/refreshed from config/worldmap.conf
+    worldmap  | 2026-04-26 10:22:13,376 [INFO] worldmap.daemon: [MAP UPDATES] Starting update pipeline...
+    worldmap  | 2026-04-26 10:22:13,376 [INFO] worldmap.orchestrate: --- Starting WorldMap Update Pipeline ---
+    worldmap  | 2026-04-26 10:22:13,377 [INFO] worldmap.lib.config: Configuration loaded/refreshed from config/worldmap.conf
+    worldmap  | 2026-04-26 10:22:13,377 [INFO] worldmap.tasks.clouds: Generated bridge config: ./data/cloud_map.conf
+    worldmap  | 2026-04-26 10:22:13,377 [INFO] worldmap.tasks.clouds: Starting cloud map generation...
+    worldmap  | 2026-04-26 10:22:13,531 [INFO] create_map_logger: data/cloud_map.jpg is new enough
+    worldmap  | 2026-04-26 10:22:13,533 [INFO] create_map_logger: finished in 0.2 s
+    worldmap  | 2026-04-26 10:22:13,534 [INFO] worldmap.orchestrate: Task 'clouds_nasa' is disabled. Skipping.
+    worldmap  | 2026-04-26 10:22:13,673 [INFO] worldmap.tasks.isobars: Using GFS run: 20260425 18Z
+    worldmap  | 2026-04-26 10:22:13,820 [INFO] worldmap.tasks.isobars: Downloading MSLP data from GFS...
+    worldmap  | 2026-04-26 10:22:14,118 [INFO] worldmap.tasks.isobars: Plotting isobars to ./data/global_isobars.png...
+    worldmap  | 2026-04-26 10:22:19,340 [INFO] worldmap.tasks.composite: Compositing data/global_isobars.png onto data/cloud_map.jpg...
+    worldmap  | 2026-04-26 10:22:19,442 [INFO] worldmap.tasks.composite: Successfully created composite: ./data/cloud_map_with_isobars.jpg
+    worldmap  | 2026-04-26 10:22:20,292 [INFO] worldmap.tasks.storms: Downloading storm data from: https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/ibtracs.ACTIVE.list.v04r01.csv
+    worldmap  | 2026-04-26 10:22:21,595 [INFO] worldmap.tasks.storms: No active storms found within expiry window.
+    worldmap  | 2026-04-26 10:22:21,597 [INFO] worldmap.tasks.quakes: Fetching earthquake data from USGS (Min Mag: 5.0)...
+    worldmap  | 2026-04-26 10:22:22,473 [INFO] worldmap.tasks.quakes: Successfully wrote 3 quake markers to: ./data/quake_markers.txt
+    worldmap  | 2026-04-26 10:22:22,531 [INFO] worldmap.tasks.shipping: Streaming AIS positions for 240s...
+    worldmap  | 2026-04-26 10:26:24,474 [INFO] worldmap.tasks.shipping: Streaming AIS static data for 10s...
+    worldmap  | 2026-04-26 10:26:36,589 [INFO] worldmap.tasks.shipping: Shipping update complete. 529 markers written.
+    worldmap  | 2026-04-26 10:26:36,595 [INFO] worldmap.orchestrate: Task 'volcanoes' is disabled. Skipping.
+    worldmap  | 2026-04-26 10:26:36,596 [INFO] worldmap.tasks.renderer: XPlanet conf: ./config/xplanet.conf
+    worldmap  | 2026-04-26 10:26:36,596 [INFO] worldmap.tasks.renderer: Running XPlanet command: xplanet -conf ./config/xplanet.conf -searchdir . -projection rectangular -geometry 1920x1200 -longitude 175 -output ./data/1777155996-worldmap.jpg -num_times 1
+    worldmap  | 2026-04-26 10:26:36,596 [INFO] worldmap.tasks.renderer: Rendering 1920x1200 map via XPlanet...
+    worldmap  | 2026-04-26 10:26:36,945 [INFO] worldmap.tasks.renderer: Final map generated: ./data/1777155996-worldmap.jpg
+    worldmap  | 2026-04-26 10:26:36,945 [INFO] worldmap.orchestrate: --- Map Update Pipeline Finished ---
 
 The resulting World map will be placed in the `data` folder. It will be prefixed with a Unix timestamp (after the previous image is removed). The different image names each time help certain desktops refresh as they should when you update the wallpaper.
 
