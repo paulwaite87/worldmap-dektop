@@ -58,29 +58,35 @@ def get_expanded_vessel_class(vessel):
     vessel_class = get_vessel_class(vessel)
     length, beam = get_vessel_dimensions(vessel)
 
+    # Deal with bogus beam data
+    if beam > 70:
+        beam = 0
+
+    # Ships like the BOREAS (WTIV) have a length-to-beam ratio < 3.
+    # Normal tankers/cargo are usually 5:1 or 6:1.
     if vessel_class == "Tanker":
-        if length > 350 or beam > 60:
+        if length > 0 and beam > 0 and (length / beam) < 3.5:
+            return "SPEC"
+        elif length > 350 and beam > 58:
             return "ULTRA"
-        elif length > 250:
+        elif length > 300:
             return "VLCC"
-        elif length >= 180:
+        elif length >= 220:
             return "STD"
         else:
             return vessel_class
 
     elif vessel_class == "Passenger":
-        # Categorizing based on the 3 levels of Cruise Ship scale
         if length > 250:
             return "Cruise MEGA"  # Mega-Cruise / Super-Liner
-        elif length > 190:
+        elif length > 150:
             return "Cruise"  # Standard Cruise Ship
         elif length > 50:
             return "Ferry"  # Small / Large Ferry
         else:
             return vessel_class
 
-    else:
-        return vessel_class
+    return vessel_class
 
 def get_vessel_subclass(vessel):
     vessel_type = int(vessel["vessel_type"]) or 0

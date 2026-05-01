@@ -4,21 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="81fb972d-9761-4cee-aed3-ce77125008a1" name="Changes" comment="Interim state. Just before commiting to Postgres/PostGIS upgrade.">
-      <change afterPath="$PROJECT_DIR$/src/worldmap/tasks/common.py" afterDir="false" />
+    <list default="true" id="81fb972d-9761-4cee-aed3-ce77125008a1" name="Changes" comment="Rework of updater classes to use parent Updater class with common config handling.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/worldmap.conf.example" beforeDir="false" afterPath="$PROJECT_DIR$/config/worldmap.conf.example" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/worldmap/lib/shipping.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/lib/shipping.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/map_builder.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/map_builder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/clouds.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/clouds.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/clouds_nasa.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/clouds_nasa.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/composite.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/composite.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/isobars.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/isobars.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/quakes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/quakes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/renderer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/renderer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/shipping.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/shipping.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/storms.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/storms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/worldmap/tasks/volcanoes.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/worldmap/tasks/volcanoes.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,7 +118,7 @@
       <workItem from="1777338787442" duration="3587000" />
       <workItem from="1777345023146" duration="52135000" />
       <workItem from="1777529172335" duration="1135000" />
-      <workItem from="1777531572695" duration="13695000" />
+      <workItem from="1777531572695" duration="15707000" />
     </task>
     <task id="LOCAL-00001" summary="Initial repo commit">
       <option name="closed" value="true" />
@@ -196,7 +184,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777338561899</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Rework of updater classes to use parent Updater class with common config handling.">
+      <option name="closed" value="true" />
+      <created>1777596661888</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1777596661889</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -214,6 +210,7 @@
     <MESSAGE value="Updated README.md to reflect changes. Updated worldmap.conf.example with latest conf settings, and als the ship cache with latest static data." />
     <MESSAGE value="Updated README.md" />
     <MESSAGE value="Interim state. Just before commiting to Postgres/PostGIS upgrade." />
-    <option name="LAST_COMMIT_MESSAGE" value="Interim state. Just before commiting to Postgres/PostGIS upgrade." />
+    <MESSAGE value="Rework of updater classes to use parent Updater class with common config handling." />
+    <option name="LAST_COMMIT_MESSAGE" value="Rework of updater classes to use parent Updater class with common config handling." />
   </component>
 </project>
