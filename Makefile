@@ -30,6 +30,8 @@ logs:
 # Database Backups
 # -Fc: Custom compressed format
 backup:
+	@echo "Ensuring worldmap database is running"
+	docker compose up worldmap_db -d
 	@echo "Creating compressed database backup to $(DUMP_FILE)..."
 	docker compose exec $(DB_SERVICE) pg_dump -U $(DB_USER) -Fc $(DB_NAME) > $(DUMP_FILE)
 	@echo "Backup complete."
