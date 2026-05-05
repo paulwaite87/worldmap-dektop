@@ -99,21 +99,23 @@ marker_color = orange
 label_fontsize = 12
 # Show only these classes of vessel. Possible values: ["Passenger", Tanker", "Cargo"]
 # Leave as an empty list [] to show all vessels
-filter_show_ship_classes = ["Tanker"]
+filter_show_ship_classes = []
 # Show names for specific classes of ship (same options as for filter_show_ship_classes)
 # Leave as an empty list to suppress all names
 filter_show_names_for_classes = []
 # Show ships with lengths >= this (metres 0=>no filtering)
 # Use this to filter out the small-fry
-filter_ships_minimum_length = 249
+filter_ships_minimum_length = 290
 # Show only ships moving >1.0 knots and not flagged as moored or anchored
 filter_ships_underway = True
+# Whether to show icon images; otherwise show standard marker circles
+show_ship_icons = True
 # Whether to show vessel tracks
 show_tracks = True
 # Minimum distance between track points in km
 track_min_dist = 125.0
 # Maximum number of tracking positions to show
-track_max_points = 20
+track_max_points = 50
 # Where in the World we will display ships
 # If empty [], displays ships everywhere (map could get busy!)
 #regions = ["NZ_Aus", "Suez_Canal", "English_Channel", "Strait_of_Hormuz", "Gulf_of_Aden", "Panama_Canal", "Strait_of_Malacca"]

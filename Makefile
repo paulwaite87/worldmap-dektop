@@ -47,12 +47,12 @@ restore:
 	@echo "Stopping harvester and map_builder"
 	docker compose stop harvester map_builder
 	@echo "Ensuring worldmap database is running"
-	docker compose start worldmap_db
+	docker compose up worldmap_db -d
 	@echo "Restoring database..."
 	cat $(DUMP_FILE) | docker compose exec -T $(DB_SERVICE) pg_restore -U $(DB_USER) -d postgres --clean --create --if-exists
-	@echo "Restarting services..."
-	docker compose start harvester map_builder
 	@echo "Restore complete."
+	@echo "Stopping worldmap database."
+	@docker compose stop worldmap_db
 
 # Clean/Purge
 clean:

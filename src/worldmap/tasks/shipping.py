@@ -9,13 +9,7 @@ import math
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.shipping import (
     ShipDatabase,
-    get_vessel_class,
-    get_vessel_name,
-    get_vessel_dimensions,
-    get_vessel_description,
-    get_vessel_position,
-    vessel_is_underway,
-    get_expanded_vessel_class,
+    Ship,
 )
 from .common import Updater
 
@@ -63,6 +57,7 @@ class ShippingUpdater(Updater):
 
         # Filter and Format Markers
         show_ships_underway = self.settings.getboolean("show_ships_underway", fallback=False)
+        show_ship_icons = self.settings.get("show_ship_icons", fallback="")
         show_ship_classes = json.loads(
             self.settings.get("filter_show_ship_classes", fallback='["Tanker", "Cargo"]')
         )
@@ -79,80 +74,77 @@ class ShippingUpdater(Updater):
 
         written_count = 0
         with open(self.output_path, "w") as f:
-            for ship in fleet:
-                # Basic Metadata from DB
-                ship_class = get_vessel_class(ship)
+            for vessel in fleet:
+                ship = Ship(vessel)
 
                 # Length Filter
-                ship_length, ship_beam = get_vessel_dimensions(ship)
+                ship_length, ship_beam = ship.get_vessel_dimensions()
                 if ship_length < min_length:
                     continue
 
                 # Class Filter
-                if show_ship_classes and ship_class not in show_ship_classes:
+                if show_ship_classes and ship.vessel_class not in show_ship_classes:
                     continue
 
                 # Names filter
-                if show_ships_by_name and get_vessel_name(ship) not in show_ships_by_name:
+                if show_ships_by_name and ship.vessel_name not in show_ships_by_name:
                     continue
 
                 # Ship underway filter
-                if show_ships_underway and not vessel_is_underway(ship):
+                if show_ships_underway and not ship.is_underway():
                     continue
 
                 # Formatting coordinates for Xplanet
-                ship_latitude, ship_longitude = get_vessel_position(ship)
+                ship_latitude, ship_longitude = ship.get_vessel_position()
                 if ship_latitude is None or ship_longitude is None:
                     continue
 
-                # Logic for "Empty Ship" symbol (draught comparison)
-                draught = float(ship["draught"]) or 0.0
-                prev_draught = float(ship["prev_draught"]) or 0.0
-                is_empty = (0.0 < draught < prev_draught > 0.0)
+                # Colour logic
+                ship_colour = ship.get_vessel_colour()
+                marker_colour = ""
 
-                suffix = "_empty.png" if is_empty else ".png"
-                if ship_class == "Tanker":
-                    prefix = "ship_tanker"
-                elif ship_class == "Cargo":
-                    prefix = "ship_cargo"
-                else:
-                    prefix = "ship"
-                    suffix = ".png"
+                # Ship label logic
+                if ship.vessel_class in show_names_classes:
+                    fontsize = int(base_label_fontsize)
+                    ship_expanded_class = ship.get_expanded_vessel_class()
 
-                ship_symbol = f"{prefix}{suffix}"
-
-                # Label Logic
-                ship_label = ""
-                if ship_class in show_names_classes:
-                    label_color = label_color_default
-                    label_size = int(base_label_fontsize)
-
-                    # Gets the enhanced class description
-                    ship_expanded_class = get_expanded_vessel_class(ship)
-
-                    # Marker scaling and colours for Tankers
                     if ship_expanded_class == "ULTRA":
-                        label_size = int(base_label_fontsize * 2.0)
+                        fontsize = int(base_label_fontsize * 2.0)
                     elif ship_expanded_class == "VLCC":
-                        label_size = int(base_label_fontsize * 1.6)
-                        label_color = "DeepPink"
+                        fontsize = int(base_label_fontsize * 1.6)
                     elif ship_expanded_class == "STD":
-                        label_size = int(base_label_fontsize * 1.3)
-                        label_color = "Green"
+                        fontsize = int(base_label_fontsize * 1.3)
 
-                    ship_label = (f'"{get_vessel_description(ship)}" '
-                                  f'color={label_color} fontsize={label_size}')
+                    ship_label = f"{ship.get_vessel_description()}"
+                    fontsize = f" fontsize={fontsize}"
+                    marker_colour = f" color={ship_colour}"
+                else:
+                    ship_label = fontsize = ""
+
+                # Ship icon image logic
+                if show_ship_icons == "Arrows":
+                    logger.debug("showing ships as arrow icons")
+                    marker_image = f"image={ship.get_vessel_directional_icon()}"
+                elif show_ship_icons == "Discs":
+                    logger.debug("showing ships as disc icons")
+                    marker_image = f" image={ship.get_vessel_disc_icon()}"
+                else:
+                    marker_image = ""
+                    marker_colour = f" color={ship_colour}"
+                    logger.debug("showing ships as default markers")
+
 
                 # --- Write the Primary Ship Marker ---
-                f.write(f"{ship_latitude} {ship_longitude} {ship_label} image={ship_symbol}\n")
+                logger.debug(f'Ship: {ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_colour}{marker_image}')
+                f.write(f'{ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_colour}{marker_image}\n')
                 written_count += 1
 
                 # --- Write Track Markers ---
                 # Rule 1: No marker for latest position is handled by starting distance
                 # check from current ship_latitude/longitude.
-                if show_tracks and ship_class in show_names_classes:
+                if show_tracks and ship.vessel_class in show_names_classes:
                     # Fetch history (limited to 100 to ensure we find enough distant points)
-                    history = ship_db.get_ship_track(ship["mmsi"], limit=100)
+                    history = ship_db.get_ship_track(ship.mmsi, limit=100)
 
                     last_lat, last_lon = ship_latitude, ship_longitude
                     points_placed = 0

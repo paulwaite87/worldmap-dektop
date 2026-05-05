@@ -81,6 +81,8 @@ class XPlanetRenderer(Updater):
             # Log the output even on success to see warnings
             if result.stderr:
                 logger.warning(f"XPlanet Warnings: {result.stderr}")
+            elif result.stdout:
+                logger.debug(f"XPlanet Warnings: {result.stdout}")
 
             logger.debug(f"Final map generated: {output_path}")
         except subprocess.TimeoutExpired:
