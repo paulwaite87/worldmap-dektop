@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 class MapRefreshHandler(FileSystemEventHandler):
     def __init__(self, watch_dir, pattern):
-        self.watch_dir = os.path.abspath(watch_dir)
+        self.watch_dir = str(os.path.abspath(watch_dir))
         self.pattern = pattern
         self.de = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
         self.last_applied = None

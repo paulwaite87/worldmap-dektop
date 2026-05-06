@@ -45,3 +45,13 @@ class WorldMapConfig:
             return self.config[section]
         # Return an empty SectionProxy
         return self.config['DEFAULT']
+
+    def section_enabled(self, section):
+        if self.config.has_section(section):
+            return self.config.getboolean(section, "enabled", fallback=False)
+        return False
+
+    def get_section_outfile(self, section):
+        if self.config.has_section(section):
+            return self.config.get(section, "outfile", fallback=None)
+        return None

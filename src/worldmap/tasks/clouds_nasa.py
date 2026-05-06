@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 class NasaCloudUpdater(Updater):
     def __init__(self, config: WorldMapConfig):
         super().__init__(config, "Clouds_NASA")
+        self.clouds_settings = config.get_section("clouds")
 
     def run(self):
         """Downloads the cloud layer from NASA GIBS WMS."""
@@ -23,8 +24,8 @@ class NasaCloudUpdater(Updater):
 
         base_url = self.settings.get("url").strip('"')  # Handle quoted URLs from config
         outfile = self.settings.get("outfile")
-        width = self.settings.getint("width", fallback=2048)
-        height = self.settings.getint("height", fallback=1024)
+        width = self.clouds_settings.getint("width", fallback=2048)
+        height = self.clouds_settings.getint("height", fallback=1024)
 
         # Construct full output path
         output_path = str(os.path.join(self.workdir, outfile))

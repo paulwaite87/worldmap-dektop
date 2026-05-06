@@ -12,6 +12,7 @@ from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.logging import setup_logging
 
 # Task imports
+from worldmap.tasks.common import Updater
 from worldmap.tasks.clouds import CloudUpdater
 from worldmap.tasks.clouds_nasa import NasaCloudUpdater
 from worldmap.tasks.isobars import IsobarUpdater
@@ -62,40 +63,38 @@ class MapBuilder:
         self.last_run_times.clear()
 
     def some_tasks_ready_to_run(self) -> bool:
-        for section, _ in self.task_registry:
+        for section, task_class in self.task_registry:
+            updater = task_class(self.config)
             if section == "composite":
                 continue
-            if self.should_run(section):
+            if self.should_run(updater):
                 return True
         return False
 
-    def should_run(self, section: str) -> bool:
+    def should_run(self, updater: Updater, clear_output=False) -> bool:
         """
-        Determines if a task is due based on runs_per_day.
+        Determines if an updater task is due based on runs_per_day.
         Returns True if the elapsed time exceeds (86400 / runs_per_day).
         """
-        # This section depends on isobars; always run
-        if section == "composite":
-            return True
+        # If isobars were updated, then composite should always run
+        if updater.section == "composite":
+            return True if self.isobars_were_updated else False
 
-        settings = self.config.get_section(section)
-
-        if not settings.getboolean("enabled", fallback=False):
+        # If the updater is disabled, make it remove any output, then skip
+        if not updater.enabled:
+            if clear_output:
+                updater.remove_output_file()
             return False
 
         # Handle special case of xplanet renderer, which doesn't
         # have a schedule and updates when the map has changed
-        if section == "xplanet" and self.map_updated:
-            return True
-
-        # If isobars were updated, then composite should run
-        if section == "composite" and self.isobars_were_updated:
+        if updater.section == "xplanet" and self.map_updated:
             return True
 
         try:
-            runs_per_day: int = settings.getint("runs_per_day", fallback=0)
+            runs_per_day: int = updater.settings.getint("runs_per_day", fallback=0)
         except ValueError:
-            logger.error(f"Invalid 'runs_per_day' in section [{section}]. Expected integer.")
+            logger.error(f"Invalid 'runs_per_day' in section [{updater.section}]. Expected integer.")
             return False
 
         if runs_per_day <= 0:
@@ -104,7 +103,7 @@ class MapBuilder:
         # Calculate frequency interval
         interval_seconds: float = 86400.0 / runs_per_day
 
-        last_run: Optional[datetime] = self.last_run_times.get(section, None)
+        last_run: Optional[datetime] = self.last_run_times.get(updater.section, None)
 
         if last_run is None:
             return True
@@ -124,10 +123,10 @@ class MapBuilder:
                 logger.info("Map-builder scheduler run started")
 
                 for section, task_class in self.task_registry:
-                    if self.should_run(section):
+                    updater = task_class(self.config)
+                    if self.should_run(updater, clear_output=True):
                         try:
                             logger.info(f"Running scheduled task: '{section}'")
-                            updater = task_class(self.config)
 
                             # Handle both sync and async run methods
                             if section == "shipping":

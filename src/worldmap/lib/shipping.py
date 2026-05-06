@@ -304,6 +304,20 @@ class ShipDatabase:
         except Exception as e:
             logger.error(f"Database error updating position for {mmsi}: {e}")
 
+    def get_region_definition(self, label):
+        """Fetches the bounding box for a specific region label."""
+        sql = """
+              SELECT ST_XMin(boundary) as lon_min, \
+                     ST_YMin(boundary) as lat_min,
+                     ST_XMax(boundary) as lon_max, \
+                     ST_YMax(boundary) as lat_max
+              FROM map_region \
+              WHERE label = %s;
+              """
+        with self.conn.cursor() as cur:
+            cur.execute(sql, (label,))
+            return cur.fetchone()
+
     def get_current_ship_total(self):
         """Returns the total number of ships currently in the database."""
         sql = "SELECT COUNT(*) as total FROM ships;"
@@ -312,22 +326,24 @@ class ShipDatabase:
             result = cur.fetchone()
             return result['total'] if result else 0
 
-    def get_fleet(self, region_labels=None, expiry_days=3):
+    def get_fleet(self, map_region_name=None, expiry_days=3):
         """
         Retrieves ships updated within expiry_days.
         Filters by spatial region labels if provided, else returns global.
         """
-        if region_labels and len(region_labels) > 0:
+        if map_region_name:
+            # Use the direct equality check for the label
+            # and use the INTERVAL '1 day' * %s math to safely inject the number of days
             sql = """
-                  SELECT DISTINCT s.* \
-                  FROM ships s \
-                           JOIN ship_regions r ON ST_Contains(r.boundary, s.geom)
-                  WHERE r.label = ANY (%s)
-                    AND s.last_position_update > NOW() - INTERVAL '%s days'
+                  SELECT DISTINCT s.*
+                  FROM ships s
+                           JOIN map_region r ON ST_Contains(r.boundary, s.geom)
+                  WHERE r.label = %s
+                    AND s.last_position_update > NOW() - (INTERVAL '1 day' * %s)
                     AND s.lat IS NOT NULL
-                    AND s.lon IS NOT NULL; \
+                    AND s.lon IS NOT NULL;
                   """
-            params = (region_labels, expiry_days)
+            params = (map_region_name, int(expiry_days))
         else:
             sql = """
                   SELECT * \
@@ -355,7 +371,7 @@ class ShipDatabase:
                          ST_YMax(env), \
                          ST_XMax(env)
                   FROM (SELECT ST_Envelope(boundary) as env \
-                        FROM ship_regions \
+                        FROM map_region \
                         WHERE label = ANY (%s)) as sub; \
                   """
             with self.conn.cursor() as cur:
@@ -372,7 +388,7 @@ class ShipDatabase:
         """Quick boolean check if a point is inside a specific region."""
         sql = """
               SELECT 1 \
-              FROM ship_regions
+              FROM map_region
               WHERE label = %s
                 AND ST_Contains(boundary, ST_SetSRID(ST_MakePoint(%s, %s), 4326)); \
               """
