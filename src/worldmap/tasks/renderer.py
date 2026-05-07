@@ -235,36 +235,38 @@ class XPlanetRenderer(Updater):
         with open(temp_conf_path, "w") as f:
             f.write("[earth]\n")
             f.write('"Earth"\n')
+            f.write('color=0x04040e\n')
             f.write(f"map={day_map}\n")
             f.write(f"night_map={night_map}\n")
             # Xplanet mapbounds={NorthWest_Lat, NorthWest_Lon, SouthEast_Lat, SouthEast_Lon}
             # bbox order from maps.py: [lon_min, lat_min, lon_max, lat_max]
             # Therefore: {lat_max, lon_min, lat_min, lon_max}
-            #f.write(f"mapbounds={{{bbox[3]},{bbox[0]},{bbox[1]},{bbox[2]}}}\n")
-            lon_start = bbox[0] - 360
-            lon_end = bbox[2] - 360
+            f.write(f"mapbounds={{{bbox[3]},{bbox[0]},{bbox[1]},{bbox[2]}}}\n")
 
-            f.write(f"mapbounds={{{bbox[3]},{lon_start},{bbox[1]},{lon_end}}}\n")
+            # lon_start = bbox[0] - 360
+            # lon_end = bbox[2] - 360
+            #f.write(f"mapbounds={{{bbox[3]},{lon_start},{bbox[1]},{lon_end}}}\n")
+
             #f.write("specular_map=earthspec.jpg\n")
 
-            if self.config.section_enabled("clouds"):
-                f.write(f"cloud_map={regional_cloud_path}\n")
-                f.write(f'cloud_threshold={self.settings.getint("cloud_threshold", fallback=90)}\n')
-                f.write(f'cloud_gamma={self.settings.getfloat("cloud_gamma", fallback=1.0)}\n')
+            # if self.config.section_enabled("clouds"):
+            #     f.write(f'cloud_map={regional_cloud_path}\n')
+            #     f.write(f'cloud_threshold={self.settings.getint("cloud_threshold", fallback=90)}\n')
+            #     f.write(f'cloud_gamma={self.settings.getfloat("cloud_gamma", fallback=1.0)}\n')
 
-            f.write("marker_file=city_markers.txt\n")
+            f.write('marker_file=city_markers.txt\n')
 
             if self.config.section_enabled("storms"):
-                f.write(f"marker_file={self.config.get_section_outfile("storms")}\n")
+                f.write(f'marker_file={self.config.get_section_outfile("storms")}\n')
 
             if self.config.section_enabled("quakes"):
-                f.write(f"marker_file={self.config.get_section_outfile("quakes")}\n")
+                f.write(f'marker_file={self.config.get_section_outfile("quakes")}\n')
 
             if self.config.section_enabled("volcanoes"):
-                f.write(f"marker_file={self.config.get_section_outfile("volcanoes")}\n")
+                f.write(f'marker_file={self.config.get_section_outfile("volcanoes")}\n')
 
             if self.config.section_enabled("shipping"):
-                f.write(f"marker_file={self.config.get_section_outfile("shipping")}\n")
+                f.write(f'marker_file={self.config.get_section_outfile("shipping")}\n')
 
             # Default style for markers if not specified
             f.write(f'marker_color={self.settings.get("marker_default_colour", "cyan")}\n')
@@ -287,8 +289,8 @@ class XPlanetRenderer(Updater):
             "-conf", temp_conf_path,
             "-searchdir", self.workdir,
             "-projection", projection,
-#            "-geometry", f"{self.target_width}x{self.target_height}",
-            "-geometry", self.settings.get("geometry"),
+            "-geometry", f"{self.target_width}x{self.target_height}",
+#            "-geometry", self.settings.get("geometry"),
             "-longitude", longitude,
             "-latitude", latitude,
             "-output", output_path,

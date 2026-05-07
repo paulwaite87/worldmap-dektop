@@ -16,19 +16,18 @@ runs_per_day = 8
 
 [clouds_nasa]
 # Optional source for clouds; use as backup for the above
+# NB: width and height are defined in 'clouds' section
 enabled = False
 url = https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi
-outfile = data/cloud_map.jpg
-width = 2048
-height = 1024
+outfile = data/cloud_map_nasa.jpg
 runs_per_day = 8
 
 [isobars]
-enabled = True
+enabled = False
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
 outfile = data/global_isobars.png
 isobar_color = White
-label_fontsize = 10
+label_fontsize = 8
 # Optional: isobar text labels outlined for better legibility
 label_outline = True
 # This is where we put the isobars image overlaid onto the clouds image
@@ -46,7 +45,7 @@ expiry_days=3
 runs_per_day = 8
 
 [quakes]
-enabled = True
+enabled = False
 url = https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.csv
 outfile = data/quake_markers.txt
 marker_color = White
@@ -91,7 +90,7 @@ erupt_date_codes = ["D1"]
 runs_per_day = 1
 
 [shipping]
-enabled = False
+enabled = True
 # Needs an API Key in your .env file; see https://aisstream.io/documentation
 url = wss://stream.aisstream.io/v0/stream
 outfile = data/ship_markers.txt
@@ -108,18 +107,20 @@ filter_show_names_for_classes = []
 filter_ships_minimum_length = 290
 # Show only ships moving >1.0 knots and not flagged as moored or anchored
 filter_ships_underway = True
-# Whether to show icon images; otherwise show standard marker circles
-show_ship_icons = True
+# Show ships on the map as icons, either 'Arrows' or 'Disc', or comment out for default markers
+# 'Arrows': Directional icon images. These are arrows colour-coded as:
+# 'Discs'. These are filled circular icons which may have a 'T' or 'C' inside.
+# 'C' - Cargo. Green = loaded; Red = unloaded since last info
+# 'T' - Tanker. Red = loaded; Lime green = unloaded
+# Purple discs are for Passenger ships and all other vessel types
+#show_ship_icons = Discs
+#show_ship_icons = Arrows
 # Whether to show vessel tracks
 show_tracks = True
 # Minimum distance between track points in km
 track_min_dist = 125.0
 # Maximum number of tracking positions to show
 track_max_points = 50
-# Where in the World we will display ships
-# If empty [], displays ships everywhere (map could get busy!)
-#regions = ["NZ_Aus", "Suez_Canal", "English_Channel", "Strait_of_Hormuz", "Gulf_of_Aden", "Panama_Canal", "Strait_of_Malacca"]
-regions = []
 # If a ship has been inactive for this time or more, don't display it
 expiry_days = 5
 runs_per_day = 24
@@ -128,7 +129,7 @@ runs_per_day = 24
 # The harvester acquires ship data and stores it in the db, listening in
 # an endless loop. The harvesting is done globally in 10 longitudinal 'slices'.
 # This stored data is used by the map builder when displaying ships on the map.
-enabled = False
+enabled = True
 # Needs an API Key in your .env file; see https://aisstream.io/documentation
 url = wss://stream.aisstream.io/v0/stream
 # Time to listen for data broadcasts
@@ -149,6 +150,19 @@ geometry = 1920x1200
 longitude = 175
 # This is the final map image we generate
 base_filename = worldmap.jpg
-# This file holds standard XPlanet configration settings
-# See https://xplanet.sourceforge.net/README.config
-xplanet_conf = config/xplanet.conf
+marker_default_colour = cyan
+marker_default_fontsize = 12
+# Threshold for cloud visibility 0-255
+cloud_threshold = 200
+# Gamma correction for clouds
+cloud_gamma = 0.7
+# This 'region' variable will determine the map that is displayed. If empty,
+# commented-out or nullstring we display the whole World. Otherwise we will
+# try to download a high-res map of the region specified and display that.
+# This setting can take the name of a region in your 'map_region' table, or it
+# can define a bounding box in format [lon_top_left, lat_top_left, lon_bottom_right, lat_bottom_right]
+# Regions defined for you out-of-the-box are:
+# NZ_Aus, Suez_Canal, English_Channel, Strait_of_Hormuz, Singapore,
+# Saudi_Arabia, Mediterraneam, Panama_Canal
+#region = English_Channel
+#region = [-209.973414, 34.698514, -112.141024, 73.763280]

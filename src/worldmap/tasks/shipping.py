@@ -95,8 +95,12 @@ class ShippingUpdater(Updater):
         track_min_dist = float(self.settings.get("track_min_distance_km", fallback=5.0))
         track_max_points = self.settings.getint("track_max_points", fallback=10)
 
+        show_ships_underway = self.settings.getboolean("show_ships_underway", fallback=False)
+        show_ship_icons = self.settings.get("show_ship_icons", fallback="")
         show_ship_classes = json.loads(self.settings.get("filter_show_ship_classes", fallback='["Tanker", "Cargo"]'))
         show_names_classes = json.loads(self.settings.get("filter_show_names_for_classes", fallback='["Tanker"]'))
+        show_ships_by_name = json.loads(self.settings.get("filter_show_ships_by_name", fallback='[]'))
+        min_length = self.settings.getint("filter_ships_minimum_length", fallback=0)
         base_label_fontsize = float(self.settings.getint("label_fontsize", fallback=12))
         label_color_default = self.settings.get("marker_color", fallback="red")
 
@@ -107,13 +111,30 @@ class ShippingUpdater(Updater):
             for vessel in fleet:
                 ship = Ship(vessel)
 
-                # Basic Filters (Class, Length, Status)
+                # Length Filter
+                ship_length, ship_beam = ship.get_vessel_dimensions()
+                if ship_length < min_length:
+                    continue
+
+                # Class Filter
                 if show_ship_classes and ship.vessel_class not in show_ship_classes:
+                    continue
+
+                # Names filter
+                if show_ships_by_name and ship.vessel_name not in show_ships_by_name:
+                    continue
+
+                # Ship underway filter
+                if show_ships_underway and not ship.is_underway():
                     continue
 
                 raw_lat, raw_lon = ship.get_vessel_position()
                 if raw_lat is None or raw_lon is None:
                     continue
+
+                # Colour logic
+                ship_colour = ship.get_vessel_colour()
+                marker_colour = ""
 
                 # --- 3. Coordinate Normalization ---
                 ship_latitude = raw_lat
@@ -133,21 +154,38 @@ class ShippingUpdater(Updater):
                 ship_label = fontsize = marker_image = ""
 
                 if ship.vessel_class in show_names_classes:
+                    fontsize = int(base_label_fontsize)
+                    ship_expanded_class = ship.get_expanded_vessel_class()
+
+                    if ship_expanded_class == "ULTRA":
+                        fontsize = int(base_label_fontsize * 2.0)
+                    elif ship_expanded_class == "VLCC":
+                        fontsize = int(base_label_fontsize * 1.6)
+                    elif ship_expanded_class == "STD":
+                        fontsize = int(base_label_fontsize * 1.3)
+
                     ship_label = f"{ship.get_vessel_description()}"
-                    fs = int(base_label_fontsize)
-                    cls = ship.get_expanded_vessel_class()
-                    if cls == "ULTRA":
-                        fs *= 2.0
-                    elif cls == "VLCC":
-                        fs *= 1.6
-                    elif cls == "STD":
-                        fs *= 1.3
-                    fontsize = f" fontsize={int(fs)}"
+                    fontsize = f" fontsize={fontsize}"
                     marker_colour = f" color={ship_colour}"
                 else:
-                    marker_colour = f" color={ship_colour}"
+                    ship_label = fontsize = ""
 
-                f.write(f'{ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_colour}\n')
+                # Ship icon image logic
+                if show_ship_icons == "Arrows":
+                    logger.debug("showing ships as arrow icons")
+                    marker_image = f"image={ship.get_vessel_directional_icon()}"
+                elif show_ship_icons == "Discs":
+                    logger.debug("showing ships as disc icons")
+                    marker_image = f" image={ship.get_vessel_disc_icon()}"
+                else:
+                    marker_image = ""
+                    marker_colour = f" color={ship_colour}"
+                    logger.debug("showing ships as default markers")
+
+
+                # --- Write the Primary Ship Marker ---
+                logger.debug(f'Ship: {ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_colour}{marker_image}')
+                f.write(f'{ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_colour}{marker_image}\n')
                 written_count += 1
 
                 # --- 4. Track Normalization ---
@@ -169,7 +207,7 @@ class ShippingUpdater(Updater):
                         if dist >= track_min_dist:
                             # Only write track points if they are within our bbox
                             if not bbox or (bbox[1] <= h_lat <= bbox[3] and bbox[0] <= h_lon <= bbox[2]):
-                                f.write(f"{h_lat} {h_lon} color={label_color_default} symbol=dot\n")
+                                f.write(f"{h_lat} {h_lon} color={label_color_default}\n")
                                 last_lat, last_lon = h_lat, h_lon
                                 points_placed += 1
 

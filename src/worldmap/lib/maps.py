@@ -13,33 +13,53 @@ class NASAGIBSDownloader:
 
     def download_region_map(self, bbox, target_width, target_height, outfile, is_night=False):
         """
-        Downloads a regional map. Clamps to 180 longitude to prevent Xplanet rendering artifacts.
-        Returns: (success_bool, final_bbox)
+        Downloads and stitches regional maps to handle Date Line crossings.
+        bbox: [lon_min, lat_min, lon_max, lat_max]
         """
         lon_min, lat_min, lon_max, lat_max = bbox
+        success = False
 
-        # 1. Clamp to Dateline and adjust width to maintain aspect ratio
-        if lon_max > 180.0:
-            logger.info(f"Clamping {outfile} to 180 longitude to prevent rendering gaps.")
+        # Handle Date Line Crossing (e.g., NZ/Aus region)
+        if lon_max > 180:
+            logger.info(f"Correcting Date Line crossing for {outfile}...")
 
-            original_span = lon_max - lon_min
-            clamped_span = 180.0 - lon_min
+            # 1. Calculate spans for proportional scaling
+            span_west = 180.0 - lon_min  # Distance from start to 180
+            span_east = lon_max - 180.0  # Distance past 180
+            total_span = span_west + span_east
 
-            # Reduce width proportionally so the land isn't stretched
-            target_width = int(target_width * (clamped_span / original_span))
-            lon_max = 180.0
+            # 2. Calculate proportional pixel widths to prevent "smearing"
+            width_west = int((span_west / total_span) * target_width)
+            width_east = target_width - width_west
 
-        final_bbox = [lon_min, lat_min, lon_max, lat_max]
+            # 3. Define the two bounding boxes
+            # Tile 1: Western side (Australia/Tasman side of the line)
+            bbox1 = [lon_min, lat_min, 180.0, lat_max]
+            # Tile 2: Eastern side (The "overflow" into the Western Hemisphere)
+            bbox2 = [-180.0, lat_min, -180.0 + span_east, lat_max]
 
-        # 2. Fetch the single tile (no stitching required)
-        img = self._fetch_wms_image(final_bbox, is_night, width=target_width, height=target_height)
+            # 4. Fetch tiles
+            img1 = self._fetch_wms_image(bbox1, is_night, width=width_west, height=target_height)
+            img2 = self._fetch_wms_image(bbox2, is_night, width=width_east, height=target_height)
 
-        if img:
-            os.makedirs(os.path.dirname(outfile), exist_ok=True)
-            img.save(outfile, "JPEG", quality=90)
-            return True, final_bbox
+            if img1 and img2:
+                combined = Image.new('RGB', (target_width, target_height))
+                # Paste in correct geographical order: West on Left, East on Right
+                combined.paste(img1, (0, 0))
+                combined.paste(img2, (width_west, 0))
 
-        return False, bbox
+                os.makedirs(os.path.dirname(outfile), exist_ok=True)
+                combined.save(outfile, "JPEG", quality=90)
+                success = True
+        else:
+            # Standard single-tile download for regions NOT crossing 180
+            img = self._fetch_wms_image(bbox, is_night, width=target_width, height=target_height)
+            if img:
+                os.makedirs(os.path.dirname(outfile), exist_ok=True)
+                img.save(outfile, "JPEG", quality=90)
+                success = True
+
+        return success
 
     def _fetch_wms_image(self, bbox, is_night, width, height):
         layer = "VIIRS_Black_Marble" if is_night else "BlueMarble_ShadedRelief_Bathymetry"

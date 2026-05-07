@@ -65,6 +65,7 @@ class MapBuilder:
     def some_tasks_ready_to_run(self) -> bool:
         for section, task_class in self.task_registry:
             updater = task_class(self.config)
+            logger.debug(f"Updater task '{updater.section}' checking if it could run")
             if section == "composite":
                 continue
             if self.should_run(updater):
@@ -76,12 +77,14 @@ class MapBuilder:
         Determines if an updater task is due based on runs_per_day.
         Returns True if the elapsed time exceeds (86400 / runs_per_day).
         """
+        logger.debug(f"Updater task '{updater.section}' checking if we should run")
         # If isobars were updated, then composite should always run
         if updater.section == "composite":
             return True if self.isobars_were_updated else False
 
         # If the updater is disabled, make it remove any output, then skip
         if not updater.enabled:
+            logger.debug(f"Updater task '{updater.section}' should not run - disabled")
             if clear_output:
                 updater.remove_output_file()
             return False
@@ -119,10 +122,10 @@ class MapBuilder:
             self.isobars_were_updated = False
 
             if self.some_tasks_ready_to_run():
-
                 logger.info("Map-builder scheduler run started")
 
                 for section, task_class in self.task_registry:
+                    logger.debug(f"Updater task '{section}' checking runable")
                     updater = task_class(self.config)
                     if self.should_run(updater, clear_output=True):
                         try:

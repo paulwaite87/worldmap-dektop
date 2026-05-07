@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 class CompositeUpdater(Updater):
     def __init__(self, config: WorldMapConfig):
         super().__init__(config, "Isobars")
+        self.section = "composite"
         if self.config.section_enabled("clouds"):
             self.clouds_settings = self.config.get_section("clouds")
         elif self.config.section_enabled("clouds_nasa"):
@@ -25,6 +26,8 @@ class CompositeUpdater(Updater):
         """Combines the isobar overlay onto the cloud map background."""
         self.exit_if_disabled()
 
+        logger.debug("Starting composite updater")
+
         # Retrieve paths from different config sections
         try:
             cloud_map = self.clouds_settings.get("outfile")
@@ -32,6 +35,8 @@ class CompositeUpdater(Updater):
             output_rel_path = self.settings.get(
                 "composite_outfile", fallback="data/cloud_map_with_isobars.jpg"
             )
+
+            logger.debug(f"{cloud_map} + {isobar_map} => {output_rel_path}")
 
             # Resolve absolute paths using workdir
             bg_path = os.path.join(self.workdir, cloud_map)
