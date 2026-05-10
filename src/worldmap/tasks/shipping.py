@@ -41,9 +41,6 @@ class ShippingUpdater(Updater):
         map_region_name = self.xplanet_settings.get("region", fallback=None)
         expiry = self.settings.getint("expiry_days", fallback=7)
 
-        # Resolve and Adjust BBox (Mirroring renderer.py)
-        bbox = self.map_data.region.bbox
-
         # Setup Filters and Config
         show_tracks = self.settings.getboolean("show_tracks", fallback=False)
         track_min_dist = float(self.settings.get("track_min_distance_km", fallback=5.0))

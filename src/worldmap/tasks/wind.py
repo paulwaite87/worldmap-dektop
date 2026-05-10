@@ -3,6 +3,7 @@ import os
 import logging
 import warnings
 import requests
+import numpy as np  # Added for speed calculations and masking
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -26,6 +27,7 @@ class WindUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Wind", map_data)
         self.set_output_path()
+        # Using a unique filename to avoid conflict with Isobars
         self.grib_path = os.path.join(self.workdir, "data/gfs_wind_temp.grib2")
 
     def find_latest_gfs_file(self):
@@ -84,93 +86,101 @@ class WindUpdater(Updater):
                 f.write(chunk)
 
     def plot(self):
-        """Renders the wind vector transparent PNG with configurable density."""
+        """Renders wind vectors with dynamic lengths based on wind speed."""
         logger.debug(f"Plotting wind vectors to {self.output_path}...")
 
-        # Configuration & Geometry Setup
-        density = self.settings.getint("density", fallback=12)
+        # 1. Spacing and Geometry Configuration
+        spacing_deg = self.settings.getfloat("barb_spacing", fallback=3.0)
+        density_step = max(1, int(spacing_deg / 0.25))
+
+        # Barb Length Configuration
+        base_len = self.settings.getfloat("barb_length_base", fallback=5.0)
+        len_step = self.settings.getfloat("barb_length_step", fallback=1.0)
+
         vector_color = self.settings.get("vector_color", fallback="cyan")
-        barb_length = self.settings.getint("barb_length", fallback=5)
-
         plot_target_width = float(self.target_width) / 100
-        plot_target_height = float(self.target_height) / 100
 
-        # Load the GRIB Data
-        # We filter for 10m heightAboveGround (Standard meteorological surface wind)
+        # 2. Load Data
         ds = xr.open_dataset(
             self.grib_path,
             engine="cfgrib",
-            backend_kwargs={
-                "filter_by_keys": {"typeOfLevel": "heightAboveGround", "level": 10}
-            },
+            backend_kwargs={"filter_by_keys": {"typeOfLevel": "heightAboveGround", "level": 10}},
         )
 
         bbox = self.map_region_bbox
 
-        # Handle Longitude Shifting (Prime Meridian vs Date Line)
+        # 3. Handle Longitude Shifting
         if bbox:
             if bbox[0] < 0:
-                # Shift from 0..360 to -180..180
                 ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180))
                 ds = ds.sortby('longitude')
             elif bbox[2] > 180.0:
-                # Cap eastern edge for non-Date-Line crossing maps
                 bbox[2] = 180.0
 
-        # Extract and Subsample (Thin) Data
-        # We slice the arrays using the density step to prevent clutter
-        u = ds["u10"].values
-        v = ds["v10"].values
-        lons, lats = ds["longitude"].values, ds["latitude"].values
+        # 4. Extract and Flatten (Using meshgrid for precise masking)
+        # Squeeze ensures we don't have a hidden 'time' or 'level' dimension causing density issues
+        u = ds["u10"].values.squeeze()
+        v = ds["v10"].values.squeeze()
+        lons = ds["longitude"].values
+        lats = ds["latitude"].values
 
-        lons_thin = lons[::density]
-        lats_thin = lats[::density]
-        # Multi-dimensional slicing for the U and V grids
-        u_thin = u[::density, ::density]
-        v_thin = v[::density, ::density]
+        lon2d, lat2d = np.meshgrid(lons, lats)
 
-        # Initialize Matplotlib Figure
+        # Apply subsampling
+        lons_flat = lon2d[::density_step, ::density_step].flatten()
+        lats_flat = lat2d[::density_step, ::density_step].flatten()
+        u_flat = u[::density_step, ::density_step].flatten()
+        v_flat = v[::density_step, ::density_step].flatten()
+
+        # 5. Speed Calculation (m/s to kph)
+        speed_kph = np.sqrt(u_flat ** 2 + v_flat ** 2) * 3.6
+
+        # 6. Setup Figure
         if bbox:
-            width_deg = bbox[2] - bbox[0]
-            height_deg = bbox[3] - bbox[1]
-            aspect = width_deg / height_deg
-            # Ensure the plot height matches the image aspect ratio
-            fig = plt.figure(figsize=(plot_target_width, plot_target_width / aspect), dpi=100)
+            width_deg, height_deg = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            fig = plt.figure(figsize=(plot_target_width, plot_target_width / (width_deg / height_deg)), dpi=100)
         else:
-            fig = plt.figure(figsize=(plot_target_width, plot_target_height), dpi=100)
+            fig = plt.figure(figsize=(plot_target_width, float(self.target_height) / 100), dpi=100)
 
         ax = plt.axes(projection=ccrs.PlateCarree())
-
-        # Set Geographic Extent
         if bbox:
-            logger.debug(f"Setting wind extent to bbox: {bbox}")
             ax.set_extent([bbox[0], bbox[2], bbox[1], bbox[3]], crs=ccrs.PlateCarree())
         else:
-            logger.debug("Setting global wind extent")
             ax.set_global()
 
-        # Plot Wind Barbs
-        # These standard barbs indicate speed (half-line = 5kts, full = 10kts, flag = 50kts)
-        ax.barbs(
-            lons_thin, lats_thin, u_thin, v_thin,
-            length=barb_length,
-            linewidth=0.6,
-            color=vector_color,
-            transform=ccrs.PlateCarree()
-        )
+        # 7. Plot in Speed Bins to vary length
+        # We create 5 bins: 0-20, 20-40, 40-60, 60-80, 80+ kph
+        speed_bins = [
+            (0, 20, base_len),
+            (20, 40, base_len + len_step),
+            (40, 60, base_len + len_step * 2),
+            (60, 80, base_len + len_step * 3),
+            (80, 999, base_len + len_step * 4)
+        ]
 
-        # Set Transparency and Final Save
-        # Remove all borders, axes, and background colors
+        for s_min, s_max, current_length in speed_bins:
+            mask = (speed_kph >= s_min) & (speed_kph < s_max)
+            if not np.any(mask):
+                continue
+
+            ax.barbs(
+                lons_flat[mask], lats_flat[mask], u_flat[mask], v_flat[mask],
+                length=current_length,
+                linewidth=0.6,
+                color=vector_color,
+                transform=ccrs.PlateCarree()
+            )
+
+        # 8. Clean up and Save
         ax.set_frame_on(False)
         ax.set_position((0, 0, 1, 1))
         ax.patch.set_alpha(0)
         fig.patch.set_alpha(0)
         plt.axis("off")
 
-        # Save as transparent PNG for the compositor
         plt.savefig(self.output_path, transparent=True, bbox_inches=None, pad_inches=0)
         plt.close(fig)
-        logger.debug(f"Wind vector plot saved successfully.")
+        logger.debug(f"Wind vector plot saved (Step used: {density_step})")
 
     def run(self):
         """Entry point for the task."""
@@ -186,16 +196,12 @@ class WindUpdater(Updater):
                 os.remove(self.grib_path)
 
 
-def main():
+if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
-
     config = WorldMapConfig(args.config)
     updater = WindUpdater(config, None)
     updater.run()
-
-
-if __name__ == "__main__":
-    main()
