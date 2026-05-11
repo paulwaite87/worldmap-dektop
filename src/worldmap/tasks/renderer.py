@@ -28,9 +28,11 @@ class XPlanetRenderer(Updater):
         os.makedirs(self.region_dir, exist_ok=True)
 
         # Weather imagery flags
+        self.composite_enabled = self.config.section_enabled("composite")
         self.clouds_enabled = self.config.section_enabled("clouds")
         self.isobars_enabled = self.config.section_enabled("isobars")
-        self.composite_enabled = self.config.section_enabled("composite")
+        self.wind_enabled = self.config.section_enabled("wind")
+        self.precipitation_enabled = self.config.section_enabled("precipitation")
 
     def get_regional_maps(self):
         """Returns paths for day/night maps, downloading if missing from cache."""
@@ -95,10 +97,10 @@ class XPlanetRenderer(Updater):
             f.write(f"mapbounds={{{self.map_region_bbox[3]},{self.map_region_bbox[0]},{self.map_region_bbox[1]},{self.map_region_bbox[2]}}}\n")
 
             # Whether to display the weather
-            if self.composite_enabled and (self.clouds_enabled or self.isobars_enabled):
+            if self.composite_enabled and (self.clouds_enabled or self.isobars_enabled or self.wind_enabled or self.precipitation_enabled):
                 f.write(f'cloud_map={self.config.get_section("composite").get("outfile")}\n')
-                f.write(f'cloud_threshold={self.settings.getint("cloud_threshold", fallback=90)}\n')
-                f.write(f'cloud_gamma={self.settings.getfloat("cloud_gamma", fallback=1.0)}\n')
+                f.write("cloud_threshold=0\n")
+                f.write("cloud_gamma=1.0\n")
 
             # Show active storms
             if self.config.section_enabled("storms"):

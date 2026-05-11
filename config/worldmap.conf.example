@@ -11,8 +11,8 @@ desktop_geometry = 1920x1200
 # default is 2048x1024 which is fairly universal. Setting this to higher
 # values has benefits when you display a zoomed-in region and will
 # result in sharper maps, clouds etc.
-#target_geometry = 4096x2048
-target_geometry = 2048x1024
+#target_geometry = 2048x1024
+target_geometry = 4096x2048
 
 [clouds]
 # Clouds sourced via https://clouds.matteason.co.uk/
@@ -21,6 +21,10 @@ target_geometry = 2048x1024
 enabled = True
 outfile = data/cloud_map.jpg
 force = False
+# threshold: 0-255 (e.g., 20 removes dim haze)
+threshold = 150
+# gamma: 0.1 - 2.0 (e.g., 0.5 makes clouds much more transparent)
+gamma = 0.5
 runs_per_day = 8
 
 [clouds_nasa]
@@ -29,6 +33,10 @@ runs_per_day = 8
 enabled = False
 url = https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi
 outfile = data/cloud_map_nasa.jpg
+# threshold: 0-255 (e.g., 20 removes dim haze)
+threshold = 90
+# gamma: 0.1 - 2.0 (e.g., 0.5 makes clouds much more transparent)
+gamma = 0.7
 runs_per_day = 8
 
 [isobars]
@@ -46,19 +54,31 @@ enabled = True
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
 outfile = data/wind.png
 vector_color = yellow
-barb_length = 5
-# Spacing in degrees; controls the density of them that you see
-# 3.0 is good for Global. Select 1.0 or 0.5 for regional
-barb_spacing = 0.5
 # The base length for light winds
 barb_length_base = 4.5
 # How many points to add to the length for every 20 kph of speed
 barb_length_step = 0.8
+# A density factor. Number of barbs across the region image
+# If you want more wind info (more barbs), increase this
+barb_density = 30.0
+
+[precipitation]
+enabled = True
+url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
+outfile = data/precipitation.png
+# Minimum rain rate to display (mm/hr)
+min_mm_hr = 0.4
+# Overall transparency (0.0 to 1.0)
+alpha = 0.4
+# Options: standard, ocean_blue, or high_contrast
+palette = high_contrast
+# GFS forecast hour (usually 3 or 6 for current conditions)
+forecast_hour = 3
 
 [composite]
 # Creates a composite image of clouds, isobars and wind
 enabled = True
-outfile = data/weather_map.jpg
+outfile = data/weather_map.png
 
 [storms]
 enabled = True
@@ -155,7 +175,7 @@ runs_per_day = 24
 # The harvester acquires ship data and stores it in the db, listening to AIS in
 # an endless loop. The harvesting is done globally in 10 longitudinal 'slices'.
 # This stored data is used by the map builder when displaying ships on the map.
-enabled = False
+enabled = True
 # Needs an API Key in your .env file; see https://aisstream.io/documentation
 url = wss://stream.aisstream.io/v0/stream
 # Time to listen for data broadcasts
@@ -173,7 +193,7 @@ enabled = True
 projection = rectangular
 # Set to centre over your location in global/World view; if you select a
 # region instead this will be ignored, and the region centre will be used
-longitude = 175
+longitude = 174
 # This colour is used when XPlanet can't fill an area with an image
 # such as when a bounding box extends beyond 180 longitude
 # 0x04040e is a deep blue to match NASA blue marble seas
@@ -182,23 +202,22 @@ default_fill_colour = 0x04040e
 base_filename = regionmap.jpg
 marker_default_colour = cyan
 marker_default_fontsize = 12
+# If you add your own marker files, then list the filenames here
+# and put the files in the 'markers' folder
 marker_files = ["worldmap_markers.txt"]
-# Threshold for cloud visibility 0-255
-cloud_threshold = 90
-# Gamma correction for clouds
-# 0.1 is almost invisible; 1.0 is quite bright
-cloud_gamma = 0.5
 # This 'region' variable will determine the map that is displayed. If empty,
 # commented-out or nullstring we display the whole World. Otherwise we will
 # try to download a high-res map of the region specified and display that.
 # NOTE: Xplanet has issues with regions crossing the dateline at 180E
 # and for that reason, such regions will be shifted West so as to end at
 # that boundary if they cross it.
-# This setting can take the name of a region in your 'map_region' table,
+# This setting can be the name of a region in your 'map_region' table,
 # or it can define a bounding box in format:
 # [lon_top_left, lat_top_left, lon_bottom_right, lat_bottom_right]
 # region = [63.131759, -57.173648, 190.337125, 0.239941]
+# Handy tool for definining your own regions: https://tools.mofei.life/bbox
+# It provides a bounding box in the same format as above.
 # Regions defined for you out-of-the-box are:
 # NZ, NZ_Aus, Suez_Canal, English_Channel, Strait_of_Hormuz, Singapore,
-# Saudi_Arabia, Mediterranean, Panama_Canal
-region = Strait_of_Hormuz
+# Saudi_Arabia, Mediterranean, Panama_Canal, Ukraine
+region = NZ_Aus

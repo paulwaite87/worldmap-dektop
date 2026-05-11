@@ -63,3 +63,4 @@ INSERT INTO map_region (label, boundary) VALUES ('Strait_of_Hormuz', ST_MakeEnve
 INSERT INTO map_region (label, boundary) VALUES ('Saudi_Arabia', ST_MakeEnvelope(18.167952, 2.294974, 71.636505, 34.836029, 4326));
 INSERT INTO map_region (label, boundary) VALUES ('Mediterranean', ST_MakeEnvelope(-24.658106, 19.590094, 40.609030, 47.955593, 4326));
 INSERT INTO map_region (label, boundary) VALUES ('Panama_Canal', ST_MakeEnvelope(-115.741454, -8.257072, -56.267345, 30.935109, 4326));
+INSERT INTO map_region (label, boundary) VALUES ('Ukraine', ST_MakeEnvelope(17.955828, 38.687680, 47.497370, 52.332015, 4326));
