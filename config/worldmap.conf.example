@@ -40,14 +40,14 @@ gamma = 0.7
 runs_per_day = 8
 
 [isobars]
-enabled = False
+enabled = True
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
 outfile = data/isobars.png
 isobar_color = White
 label_fontsize = 10
 # Optional: isobar text labels outlined for better legibility
 label_outline = True
-runs_per_day = 8
+runs_per_day = 10
 
 [wind]
 enabled = False
@@ -61,32 +61,41 @@ barb_length_step = 0.8
 # A density factor. Number of barbs across the region image
 # If you want more wind info (more barbs), increase this
 barb_density = 30.0
+runs_per_day = 8
 
 [precipitation]
-enabled = False
+enabled = True
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
 outfile = data/precipitation.png
 # Minimum rain rate to display (mm/hr)
 min_mm_hr = 0.4
 # Overall transparency (0.0 to 1.0)
-alpha = 0.3
+alpha = 0.7
 # Options: standard, ocean_blue, or high_contrast
 palette = high_contrast
 # GFS forecast hour (usually 3 or 6 for current conditions)
 forecast_hour = 3
+runs_per_day = 8
+
+[lightning]
+enabled = True
+url = https://demo.openweathermap.org/lightning/1.0/data
+outfile = markers/lightning.txt
+runs_per_day = 8
 
 [sst]
 # Sea Surface Temperatures
-enabled = True
+enabled = False
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/rtofs/prod
 outfile = data/sst.png
 # Overall transparency (0.0 to 1.0)
-alpha = 0.4
+alpha = 0.5
 # Options: thermal, vivid, deep, or ocean
-palette = thermal
+palette = vivid
 # Max/min temperatures
 min_c = 0
 max_c = 32
+runs_per_day = 1
 
 [composite]
 # Creates a composite image of clouds, isobars and wind
@@ -101,7 +110,7 @@ marker_color=yellow
 marker_symbol = storm_symbol.png
 regional_only=false
 expiry_days=3
-runs_per_day = 8
+runs_per_day = 4
 
 [quakes]
 enabled = True
@@ -153,6 +162,18 @@ enabled = True
 outfile = data/ship_markers.txt
 marker_color = orange
 label_fontsize = 12
+# Show ships on the map as icons, either 'Arrows' or 'Disc'. If
+# commented out (or set to something else, like 'default') then
+# the default circular markers will be used.
+# 'Arrows': Directional icon images. These are arrows colour-coded as:
+# red = Tankers, Green = Cargo, Purple = Passenger
+# 'Discs'. These are filled circular icons which may have a 'T' or 'C' inside.
+# 'C' - Cargo. Green = loaded; Red = unloaded since last info
+# 'T' - Tanker. Red = loaded; Lime green = unloaded
+# Purple discs are for Passenger ships and all other vessel types
+show_ship_icons = default
+#show_ship_icons = Discs
+#show_ship_icons = Arrows
 # Show only these classes of vessel. Possible values: ["Passenger", Tanker", "Cargo"]
 # Leave as an empty list [] to show all vessels
 filter_show_ship_classes = []
@@ -164,17 +185,11 @@ filter_show_names_for_classes = []
 filter_ships_minimum_length = 100
 # Show only ships moving >1.0 knots and not flagged as moored or anchored
 filter_ships_underway = True
-# Only show ships with these names
+# Only show ships with these names. Useful with tracking on (see below).
 filter_show_ships_by_name = []
-# Show ships on the map as icons, either 'Arrows' or 'Disc', or comment out for default markers
-# 'Arrows': Directional icon images. These are arrows colour-coded as:
-# 'Discs'. These are filled circular icons which may have a 'T' or 'C' inside.
-# 'C' - Cargo. Green = loaded; Red = unloaded since last info
-# 'T' - Tanker. Red = loaded; Lime green = unloaded
-# Purple discs are for Passenger ships and all other vessel types
-#show_ship_icons = Discs
-#show_ship_icons = Arrows
-# Whether to show vessel tracks
+# Whether to show vessel tracks. Useful mainly when filtering
+# to specific ship names otherwise the data is too dense
+# to make sense of.
 show_tracks = False
 # Minimum distance between track points in km
 track_min_dist = 125.0
@@ -215,8 +230,8 @@ default_fill_colour = 0x04040e
 base_filename = regionmap.jpg
 marker_default_colour = cyan
 marker_default_fontsize = 12
-# If you add your own marker files, then list the filenames here
-# and put the files in the 'markers' folder
+# If you add your own marker files, then list the filenames here, as a
+# comma-separated list and put the files in the 'markers' folder
 marker_files = ["worldmap_markers.txt"]
 # This 'region' variable will determine the map that is displayed. If empty,
 # commented-out or nullstring we display the whole World. Otherwise we will

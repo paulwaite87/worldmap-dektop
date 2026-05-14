@@ -175,11 +175,4 @@ class ShippingUpdater(Updater):
                                 last_lat, last_lon = h_lat, h_lon
                                 points_placed += 1
 
-        file_size = os.path.getsize(self.output_path) if os.path.exists(self.output_path) else 0
-        abs_path = os.path.abspath(self.output_path)
-
-        logger.info(f"Shipping update complete. Placed {written_count} ships.")
-        logger.info(f"Marker file written to: {abs_path}")
-        logger.info(f"Final file size: {file_size} bytes")
-
         logger.info(f"Shipping update complete. Placed {written_count} ships in region.")

@@ -21,6 +21,7 @@ from worldmap.tasks.precipitation import PrecipitationUpdater
 from worldmap.tasks.sst import SSTUpdater
 from worldmap.tasks.composite import CompositeUpdater
 from worldmap.tasks.storms import StormUpdater
+from worldmap.tasks.lightning import LightningUpdater
 from worldmap.tasks.quakes import QuakeUpdater
 from worldmap.tasks.shipping import ShippingUpdater
 from worldmap.tasks.volcanoes import VolcanoUpdater
@@ -59,6 +60,7 @@ class MapBuilder:
             ("sst", SSTUpdater),
             ("composite", CompositeUpdater),
             ("storms", StormUpdater),
+            ("lightning", LightningUpdater),
             ("quakes", QuakeUpdater),
             ("shipping", ShippingUpdater),
             ("volcanoes", VolcanoUpdater),
@@ -142,7 +144,7 @@ class MapBuilder:
                             logger.info(f"Running scheduled task: '{section}'")
 
                             # Handle both sync and async run methods
-                            if section == "shipping":
+                            if section in ["shipping", "lightning"]:
                                 await updater.run()
                             else:
                                 updater.run()

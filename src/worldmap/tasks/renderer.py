@@ -107,6 +107,10 @@ class XPlanetRenderer(Updater):
             if self.config.section_enabled("storms"):
                 f.write(f'marker_file={self.config.get_section_outfile("storms")}\n')
 
+            # Show lightning activity
+            if self.config.section_enabled("lightning"):
+                f.write(f'marker_file={self.config.get_section_outfile("lightning")}\n')
+
             # Show earthquake markers
             if self.config.section_enabled("quakes"):
                 f.write(f'marker_file={self.config.get_section_outfile("quakes")}\n')

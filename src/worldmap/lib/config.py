@@ -46,21 +46,25 @@ class WorldMapConfig:
 
     def _inject_secrets(self):
         """Silently injects API keys from environment into the config object."""
-        api_key = os.getenv("AIS_API_KEY")
+        ais_key = os.getenv("AIS_API_KEY")
+        ow_key = os.getenv("OPENWEATHER_API_KEY")
 
-        # Sections that require the AIS key
+        # Sections requiring AIS key
         for section in ["shipping_harvester"]:
             if self.config.has_section(section):
-                if api_key:
-                    # Injecting into the parser proxy
-                    self.config[section]["api_key"] = api_key
-                else:
-                    # Fail-fast if the section is enabled but the key is missing
-                    if self.config.getboolean(section, "enabled", fallback=False):
-                        logger.critical(
-                            f"FATAL: {section} is enabled but AIS_API_KEY is missing from Env."
-                        )
-                        sys.exit(1)
+                if ais_key:
+                    self.config[section]["api_key"] = ais_key
+                elif self.config.getboolean(section, "enabled", fallback=False):
+                    logger.critical(f"FATAL: {section} enabled but AIS_API_KEY missing.")
+                    sys.exit(1)
+
+        # Section requiring OpenWeather key
+        if self.config.has_section("lightning"):
+            if ow_key:
+                self.config["lightning"]["api_key"] = ow_key
+            elif self.config.getboolean("lightning", "enabled", fallback=False):
+                logger.critical("FATAL: lightning enabled but OPENWEATHER_API_KEY missing.")
+                sys.exit(1)
 
     def get_section(self, section):
         if self.config.has_section(section):
