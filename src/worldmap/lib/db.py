@@ -222,3 +222,74 @@ class Database:
         except Exception as e:
             logger.error(f"Error pruning vessel tracks: {e}")
             return 0
+
+    def update_lightning_strike(self, strike_id, lat, lon, quality, timestamp_iso):
+        """UPSERTs a lightning strike into the database with spatial geometry."""
+        sql = """
+              INSERT INTO lightning_strikes (id, lat, lon, geom, quality, acquired_at)
+              VALUES (%s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s) ON CONFLICT (id) DO NOTHING; \
+              """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (strike_id, lat, lon, lon, lat, quality, timestamp_iso))
+        except Exception as e:
+            logger.error(f"Error saving lightning strike {strike_id}: {e}")
+
+    def get_lightning_in_region(self, lon_min, lat_min, lon_max, lat_max, age_minutes=60):
+        """Retrieves strikes within a specific bbox and time window."""
+        sql = """
+              SELECT lat, lon, acquired_at as timestamp
+              FROM lightning_strikes
+              WHERE geom && ST_MakeEnvelope(%s \
+                  , %s \
+                  , %s \
+                  , %s \
+                  , 4326)
+                AND acquired_at \
+                  > NOW() - (INTERVAL '1 minute' * %s); \
+              """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (lon_min, lat_min, lon_max, lat_max, age_minutes))
+                return cur.fetchall()
+        except Exception as e:
+            logger.error(f"Error fetching lightning for region: {e}")
+            return []
+
+    def prune_lightning(self, expiry_hours=2):
+        """Deletes old lightning data to keep the table performant."""
+        sql = "DELETE FROM lightning_strikes WHERE acquired_at < NOW() - (INTERVAL '1 hour' * %s);"
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (expiry_hours,))
+                return cur.rowcount
+        except Exception as e:
+            logger.error(f"Error pruning lightning: {e}")
+            return 0
+
+    def get_priority_region_list(self, primary_region_label):
+        """
+        Returns all regions from the database, ordered so the primary_region_label
+        is first. Includes bounding box coordinates.
+        """
+        sql = """
+              SELECT label,
+                     ST_XMin(boundary) as lon_min,
+                     ST_YMin(boundary) as lat_min,
+                     ST_XMax(boundary) as lon_max,
+                     ST_YMax(boundary) as lat_max
+              FROM map_region
+              ORDER BY (label = %s) DESC, label ASC; \
+              """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(sql, (primary_region_label,))
+                return cur.fetchall()
+        except Exception as e:
+            logger.error(f"Error fetching priority region list: {e}")
+            return []
+
+    def execute(self, sql, params=None):
+        """Generic execution helper for simple queries (like manual deletes)."""
+        with self.conn.cursor() as cur:
+            cur.execute(sql, params)

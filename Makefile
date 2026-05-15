@@ -97,6 +97,13 @@ status:
 	    count(*) FILTER (WHERE name = 'Unknown' AND vessel_type = 0) as shadow_records, \
 	    count(*) as total \
 	 FROM ships;"
+	@echo "--- Lightning Strikes in Each Region ---"
+	@docker compose exec -T $(DB_SERVICE) psql -U $(DB_USER) $(DB_NAME) -c \
+	"SELECT r.label as region, count(l.id) as strikes \
+	 FROM map_region r \
+	 LEFT JOIN lightning_strikes l ON ST_Within(l.geom, r.boundary) \
+	 GROUP BY r.label \
+	 ORDER BY strikes DESC;"
 
 # Force the map builder to reset its schedule and run all tasks immediately
 force-map-refresh:

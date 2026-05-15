@@ -1,17 +1,49 @@
 services:
-  # Listens to AIS stream 24/7
-  harvester:
-    container_name: harvester
+  # Listens to AIS stream 24/7 and populates Ship positions
+  shipping_collector:
+    container_name: shipping_collector
     image: worldmap:latest
     build:
       context: .
       dockerfile: Dockerfile
-    command: python -m worldmap.harvester --config /opt/project/config/worldmap.conf
+    command: python -m worldmap.shipping_collector --config /opt/project/config/worldmap.conf
     env_file:
       - .env
     environment:
       - LOG_LEVEL=INFO
       - AIS_API_KEY=${AIS_API_KEY}
+      - TZ=Pacific/Auckland
+      - PYTHONPATH=/opt/project/src
+      - PYTHONUNBUFFERED=1
+      - PGHOST=worldmap_db
+      - PGPORT=5432
+      - PGDATABASE=worldmap
+      - PGUSER=wmap
+      - PGPASSWORD=wmap
+    restart: unless-stopped
+    depends_on:
+      worldmap_db:
+        condition: service_healthy
+    volumes:
+      - ./data:/opt/project/data
+      - ./config:/opt/project/config
+      - .:/opt/project
+    networks:
+      - wmap
+
+  # Tiles the globe/regions for lightning strikes and populates DB
+  weather_scanner:
+    container_name: weather_scanner
+    image: worldmap:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python -m worldmap.weather_scanner --config /opt/project/config/worldmap.conf
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=INFO
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
       - TZ=Pacific/Auckland
       - PYTHONPATH=/opt/project/src
       - PYTHONUNBUFFERED=1

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import json
 import logging
 import asyncio
@@ -6,7 +7,7 @@ import websockets
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.db import Database
 
-logger = logging.getLogger("worldmap.harvester")
+logger = logging.getLogger("worldmap.ship_scanner")
 
 # A 10-element shipping density map (Weight x Base Duration)
 # 1.0 is standard, >1.0 spends extra time, <1.0 is a quick pass
@@ -24,23 +25,32 @@ SLICE_DENSITY_MAP = {
 }
 
 
-class ShipHarvester:
+class ShippingCollector:
+    settings = None
+    api_key = None
+    url = None
+
     def __init__(self, config_path):
         self.config_path = config_path
         self.config = WorldMapConfig(config_path)
-        self.workdir = self.config.get_section("common").get("workdir", ".")
-        logger.debug(f"Workdir: {self.workdir} - Initializing Ship Harvester")
-        self.load_settings()
+        self.db = Database()
+        self.refresh_settings()
+        logger.debug("Initializing Shipping Collector")
 
-    def load_settings(self):
+    def refresh_settings(self):
         self.config.load()
-        self.settings = self.config.get_section("shipping_harvester")
+        self.settings = self.config.get_section("shipping_collector")
+        self.url = self.settings.get("url")
+        self.api_key = self.settings.get("api_key", fallback=None)
+        if not self.api_key:
+            logger.error("AIS API key not set")
+            sys.exit(1)
 
-    async def harvest_region(self, db, url, api_key, bbox, duration, label):
+    async def collect_ships_in_region(self, bbox, duration, label):
         """Connects to AIS stream and processes messages for a specific bbox."""
 
         sub = {
-            "APIKey": api_key,
+            "APIKey": self.api_key,
             "BoundingBoxes": [bbox],
             "FilterMessageTypes": ["ShipStaticData", "PositionReport"],
         }
@@ -51,12 +61,12 @@ class ShipHarvester:
         try:
             # ping_interval and ping_timeout help detect dead connections
             async with websockets.connect(
-                    url, ping_interval=20, ping_timeout=20
+                    self.url, ping_interval=20, ping_timeout=20
             ) as ws:
                 await ws.send(json.dumps(sub))
                 start_time = asyncio.get_event_loop().time()
 
-                logger.info(f"Harvesting for {duration}s")
+                logger.info(f"Collecting shipping for {duration}s")
                 logger.info(f"{label}")
 
                 while asyncio.get_event_loop().time() - start_time < duration:
@@ -75,14 +85,14 @@ class ShipHarvester:
                         if m_type == "ShipStaticData":
                             body = msg.get("Message", {}).get("ShipStaticData", {})
                             # Offload blocking DB call to a thread to keep loop responsive
-                            await asyncio.to_thread(db.update_ship_static_data, mmsi, meta, body)
+                            await asyncio.to_thread(self.db.update_ship_static_data, mmsi, meta, body)
                             static_count += 1
 
                         # --- Handle Position Reports ---
                         elif m_type == "PositionReport":
                             body = msg.get("Message", {}).get("PositionReport", {})
                             # Offload blocking DB call to a thread
-                            await asyncio.to_thread(db.update_ship_position_data, mmsi, body)
+                            await asyncio.to_thread(self.db.update_ship_position_data, mmsi, body)
                             pos_count += 1
 
                     except asyncio.TimeoutError:
@@ -100,11 +110,6 @@ class ShipHarvester:
 
     async def run(self):
         import random
-        self.load_settings()
-        db = Database()
-
-        url = self.settings.get("url")
-        api_key = self.settings.get("api_key")
 
         # Base duration (e.g., 300s). This will be multiplied by the weight.
         base_duration = self.settings.getint("listen_duration", fallback=300)
@@ -115,11 +120,13 @@ class ShipHarvester:
         slice_width = 36.0
 
         while True:
-            logger.info("Ship-harvester Service: Starting weighted global rotation")
-            start_total = db.get_current_ship_total()
+            logger.info("Shipping Collector Service: Starting weighted global rotation")
+            self.refresh_settings()
+
+            start_total = self.db.get_current_ship_total()
 
             try:
-                db.prune_vessel_tracks(track_expiry)
+                self.db.prune_vessel_tracks(track_expiry)
 
                 # Random starting slice
                 start_offset = random.randrange(num_chunks)
@@ -145,15 +152,13 @@ class ShipHarvester:
                     # Log the specific duration for transparency in journalctl
                     logger.info(f"{chunk_label}")
 
-                    await self.harvest_region(
-                        db, url, api_key, chunk_bbox, effective_duration, chunk_label
-                    )
+                    await self.collect_ships_in_region(chunk_bbox, effective_duration, chunk_label)
 
-                end_total = db.get_current_ship_total()
+                end_total = self.db.get_current_ship_total()
                 logger.info(f"Rotation complete. Added {end_total - start_total} new vessels.")
 
             except Exception as e:
-                logger.error(f"Unexpected error in harvester loop: {e}")
+                logger.error(f"Unexpected error in collection loop: {e}")
                 await asyncio.sleep(30)
 
             await asyncio.sleep(sleep_between_runs)
@@ -169,8 +174,8 @@ def main():
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
 
-    harvester = ShipHarvester(args.config)
-    asyncio.run(harvester.run())
+    collector = ShippingCollector(args.config)
+    asyncio.run(collector.run())
 
 
 if __name__ == "__main__":

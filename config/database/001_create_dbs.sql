@@ -45,6 +45,15 @@ CREATE TABLE IF NOT EXISTS ship_position (
     acquired_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS lightning_strikes (
+    id TEXT PRIMARY KEY,
+    lat REAL,
+    lon REAL,
+    geom geometry(Point, 4326),
+    quality TEXT,
+    acquired_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Indices for high-performance lookups
 CREATE INDEX IF NOT EXISTS idx_ships_geom ON ships USING GIST(geom);
 CREATE INDEX IF NOT EXISTS idx_map_region_boundary ON map_region USING GIST(boundary);
@@ -52,6 +61,8 @@ CREATE INDEX IF NOT EXISTS idx_ships_last_update ON ships(last_position_update);
 CREATE INDEX IF NOT EXISTS idx_ship_pos_mmsi ON ship_position(mmsi);
 CREATE INDEX IF NOT EXISTS idx_ship_pos_time ON ship_position(acquired_at);
 CREATE INDEX IF NOT EXISTS idx_ship_pos_geom ON ship_position USING GIST(geom);
+CREATE INDEX IF NOT EXISTS idx_lightning_geom ON lightning_strikes USING GIST(geom);
+CREATE INDEX IF NOT EXISTS idx_lightning_time ON lightning_strikes(acquired_at);
 
 -- Populate Regions
 INSERT INTO map_region (label, boundary) VALUES ('NZ_Aus', ST_MakeEnvelope(63.131759, -57.173648, 190.337125, 0.239941, 4326));
