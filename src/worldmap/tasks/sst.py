@@ -5,9 +5,7 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import cartopy.mpl.geoaxes as geoaxes
 from datetime import datetime, timedelta, timezone
-from typing import cast
 
 # Internal imports
 from worldmap.lib.config import WorldMapConfig
@@ -101,10 +99,6 @@ class SSTUpdater(Updater):
         vmin, vmax = self.settings.getint("min_c", fallback=0), self.settings.getint("max_c", fallback=32)
         palettes = {"thermal": "magma", "vivid": "turbo", "deep": "viridis", "ocean": "inferno"}
         cmap_name = palettes.get(palette_key, "magma")
-
-        bbox = self.map_region_bbox
-        plot_target_width = float(self.target_width) / 100
-        plot_target_height = float(self.target_height) / 100
 
         # --- Data Loading ---
         ds = xr.open_dataset(self.nc_path)

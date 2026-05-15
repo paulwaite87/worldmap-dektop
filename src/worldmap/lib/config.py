@@ -1,8 +1,8 @@
 import os
-import sys
 import configparser
-import json
 import logging
+
+from worldmap.lib.logging import set_loglevel
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,10 @@ class WorldMapConfig:
         self.config.read(self.config_path)
         self._inject_secrets()
         self.has_changed = self.check_if_changed()
-        logger.debug(f"Configuration loaded/refreshed from {self.config_path} (changed={self.has_changed})")
+        # Adjust log level for common (overall) logging
+        log_level = self.get_setting("common", "log_level", None)
+        if log_level:
+            set_loglevel(log_level)
 
     def _inject_secrets(self):
         """Silently injects API keys from environment into the config object."""
@@ -57,7 +60,6 @@ class WorldMapConfig:
             if self.config.has_section(section):
                 if api_key:
                     self.config[section]["api_key"] = api_key
-                    logger.debug(f"Injecting API key for {section}: {api_key}")
 
     def get_section(self, section):
         if self.config.has_section(section):
@@ -74,4 +76,7 @@ class WorldMapConfig:
             return self.config.get(section, "outfile", fallback=None)
         return None
 
-
+    def get_setting(self, section, setting, default=None):
+        if self.config.has_section(section):
+            return self.config.get(section, setting, fallback=default)
+        return default

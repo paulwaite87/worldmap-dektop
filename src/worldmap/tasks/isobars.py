@@ -7,11 +7,9 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import cartopy.mpl.geoaxes as geoaxes
 import scipy.ndimage as ndimage
 from datetime import datetime, timedelta, timezone
 from matplotlib import patheffects
-from typing import cast
 
 # Internal imports
 from worldmap.lib.config import WorldMapConfig
@@ -89,11 +87,6 @@ class IsobarUpdater(Updater):
     def plot(self):
         """Renders the isobar transparent PNG with registration fixes."""
         logger.debug(f"Plotting isobars to {self.output_path}")
-
-        # Matches sst.py target calculations
-        plot_target_width = float(self.target_width) / 100
-        plot_target_height = float(self.target_height) / 100
-        bbox = self.map_region_bbox
 
         # Load GRIB data
         ds = xr.open_dataset(

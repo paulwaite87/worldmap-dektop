@@ -1,7 +1,22 @@
 # Make a copy of this file as 'worldmap.conf' in the same 'config'
 # folder, and then customize the settings accordingly
 [common]
-workdir = .
+# The 'region' variable will determine the map that is displayed. If empty,
+# commented-out or nullstring we display the whole World. Otherwise we will
+# try to download a high-res map of the region specified and display that.
+# NOTE: Xplanet has issues with regions crossing the dateline at 180E
+# and for that reason, such regions will be shifted West so as to end at
+# that boundary if they cross it.
+# This setting can be the name of a region in your 'map_region' table,
+# or it can define a bounding box in format:
+# [lon_top_left, lat_top_left, lon_bottom_right, lat_bottom_right]
+# region = [63.131759, -57.173648, 190.337125, 0.239941]
+# Handy tool for defining your own regions: https://tools.mofei.life/bbox
+# It provides a bounding box in the same format as above.
+# Regions defined for you out-of-the-box are:
+# NZ, NZ_Aus, Suez_Canal, English_Channel, Strait_of_Hormuz, Singapore,
+# Saudi_Arabia, Mediterranean, Panama_Canal, Ukraine
+region = NZ_Aus
 # Set to the geometry (graphics resolution) of your desktop. The
 # final render of the map image will use this.
 desktop_geometry = 1920x1200
@@ -13,12 +28,19 @@ desktop_geometry = 1920x1200
 # result in sharper maps, clouds etc.
 #target_geometry = 2048x1024
 target_geometry = 4096x2048
+# Working directory
+workdir = .
+# Level for logging: DEBUG, INFO, WARNING, ERROR, CRITICAL
+# This affects all processes in the system, so will be very noisy if you
+# have certain elements enabled, eg. weather_collector. Instead you can
+# set log_level for individual processes in their sections below.
+log_level = INFO
 
 [clouds]
 # Clouds sourced via https://clouds.matteason.co.uk/
 # Codebase here https://github.com/jmozmoz/cloudmap
 # High quality images and kept reasonably up to date
-enabled = False
+enabled = True
 outfile = data/cloud_map.jpg
 force = False
 # threshold: 0-255 (e.g., 20 removes dim haze)
@@ -34,9 +56,9 @@ enabled = False
 url = https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi
 outfile = data/cloud_map_nasa.jpg
 # threshold: 0-255 (e.g., 20 removes dim haze)
-threshold = 90
+threshold = 150
 # gamma: 0.1 - 2.0 (e.g., 0.5 makes clouds much more transparent)
-gamma = 0.7
+gamma = 0.5
 runs_per_day = 8
 
 [isobars]
@@ -44,9 +66,9 @@ enabled = True
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod
 outfile = data/isobars.png
 isobar_color = White
-label_fontsize = 10
+label_fontsize = 12
 # Optional: isobar text labels outlined for better legibility
-label_outline = True
+label_outline = False
 runs_per_day = 10
 
 [wind]
@@ -79,9 +101,9 @@ runs_per_day = 8
 
 [lightning]
 enabled = True
-url = https://demo.openweathermap.org/lightning/1.0/data
 outfile = markers/lightning.txt
-runs_per_day = 8
+expiry_hours = 4
+runs_per_day = 24
 
 [sst]
 # Sea Surface Temperatures
@@ -199,8 +221,8 @@ track_max_points = 15
 expiry_days = 14
 runs_per_day = 24
 
-[shipping_harvester]
-# The harvester acquires ship data and stores it in the db, listening to AIS in
+[shipping_collector]
+# This collector acquires ship data and stores it in the db, listening to AIS in
 # an endless loop. The harvesting is done globally in 10 longitudinal 'slices'.
 # This stored data is used by the map builder when displaying ships on the map.
 enabled = True
@@ -215,6 +237,20 @@ listen_duration = 1200
 sleep_interval = 300
 # Number of days worth of vessel tracking to retain
 vessel_track_expiry_days = 14
+# Level for logging: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = INFO
+
+[weather_scanner]
+enabled = True
+url = https://demo.openweathermap.org/lightning/1.0/data
+expiry_hours = 24
+# Level for logging: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = INFO
+
+[map_builder]
+enabled = True
+# Level for logging: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = INFO
 
 [xplanet]
 enabled = True
@@ -233,19 +269,3 @@ marker_default_fontsize = 12
 # If you add your own marker files, then list the filenames here, as a
 # comma-separated list and put the files in the 'markers' folder
 marker_files = ["worldmap_markers.txt"]
-# This 'region' variable will determine the map that is displayed. If empty,
-# commented-out or nullstring we display the whole World. Otherwise we will
-# try to download a high-res map of the region specified and display that.
-# NOTE: Xplanet has issues with regions crossing the dateline at 180E
-# and for that reason, such regions will be shifted West so as to end at
-# that boundary if they cross it.
-# This setting can be the name of a region in your 'map_region' table,
-# or it can define a bounding box in format:
-# [lon_top_left, lat_top_left, lon_bottom_right, lat_bottom_right]
-# region = [63.131759, -57.173648, 190.337125, 0.239941]
-# Handy tool for defining your own regions: https://tools.mofei.life/bbox
-# It provides a bounding box in the same format as above.
-# Regions defined for you out-of-the-box are:
-# NZ, NZ_Aus, Suez_Canal, English_Channel, Strait_of_Hormuz, Singapore,
-# Saudi_Arabia, Mediterranean, Panama_Canal, Ukraine
-region = NZ_Aus

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from worldmap.lib.db import Database
 from .common import Updater
 
@@ -41,4 +41,4 @@ class LightningUpdater(Updater):
                 f.write(f"{s['lat']} {s['lon']} image={icon}\n")
                 written_count += 1
 
-        logger.info(f"Lightning update complete. Placed {written_count} strikes from DB.")
+        logger.info(f"Placed {written_count} strikes")

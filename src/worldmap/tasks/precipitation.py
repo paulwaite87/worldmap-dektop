@@ -5,12 +5,9 @@ import warnings
 import requests
 import numpy as np
 import xarray as xr
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
-import cartopy.mpl.geoaxes as geoaxes
 from datetime import datetime, timedelta, timezone
-from typing import cast
 
 # Internal imports
 from worldmap.lib.config import WorldMapConfig

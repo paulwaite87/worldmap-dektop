@@ -9,7 +9,7 @@ from PIL import Image
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.shipping import Ship
 from worldmap.lib.db import Database
-from .common import Updater, MapData, adjust_bbox_for_aspect_ratio
+from .common import Updater
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class ShippingUpdater(Updater):
         self.exit_if_disabled()
 
         ship_db = Database()
-        map_region_name = self.xplanet_settings.get("region", fallback=None)
+        map_region_name = self.config.get_setting("common", "region")
         expiry = self.settings.getint("expiry_days", fallback=7)
 
         # Setup Filters and Config
@@ -143,7 +143,6 @@ class ShippingUpdater(Updater):
                     angle = ship.get_vessel_16point_angle()
                     icon_file = self.get_cached_rotated_icon(color, angle)
                     marker_image = f" image={icon_file}"
-                    #marker_image = f"image={ship.get_vessel_directional_icon()}"
                 elif show_ship_icons == "Discs":
                     marker_image = f" image={ship.get_vessel_disc_icon()}"
                 else:

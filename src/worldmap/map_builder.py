@@ -9,7 +9,8 @@ from typing import Dict, Optional, Type, Tuple, List, Any
 
 # Library imports
 from worldmap.lib.config import WorldMapConfig
-from worldmap.lib.logging import setup_logging
+from worldmap.lib.logging import setup_logging, set_loglevel
+
 
 # Task imports
 from worldmap.tasks.common import MapData, Updater
@@ -31,6 +32,8 @@ logger = logging.getLogger("worldmap.map_builder")
 
 
 class MapBuilder:
+    enabled = False
+
     def __init__(self, config_path: str):
         self.config = WorldMapConfig(config_path)
         self.map_data = MapData(self.config)
@@ -66,6 +69,14 @@ class MapBuilder:
             ("volcanoes", VolcanoUpdater),
             ("xplanet", XPlanetRenderer),  # always keep renderer last
         ]
+
+    def refresh_settings(self):
+        self.config.load()
+        self.enabled = self.config.get_setting("map_builder", "enabled")
+        # Adjust log level if changed
+        log_level = self.config.get_setting("map_builder", "log_level")
+        if log_level:
+            set_loglevel(log_level)
 
     def handle_force_refresh(self, signum, frame):
         """Signal handler to reset the schedule."""
@@ -128,49 +139,53 @@ class MapBuilder:
 
     async def start_scheduler(self):
         while True:
-            self.config.load()
-            self.map_data.refresh()
-            self.map_updated = False
-            self.weather_image_updated = False
+            self.refresh_settings()
 
-            if self.starting_up or self.config.has_changed or self.tasks_ready_to_run():
-                logger.info("Map-builder scheduler run started")
+            if self.enabled:
+                self.map_data.refresh()
+                self.map_updated = False
+                self.weather_image_updated = False
 
-                for section, task_class in self.task_registry:
-                    logger.debug(f"Updater task '{section}' checking runnable")
-                    updater = task_class(self.config, self.map_data)
-                    if self.should_run(updater, clear_output=True):
-                        try:
-                            logger.info(f"Running scheduled task: '{section}'")
+                if self.starting_up or self.config.has_changed or self.tasks_ready_to_run():
+                    logger.info("Map-builder scheduler run started")
 
-                            # Handle both sync and async run methods
-                            if section in ["shipping", "lightning"]:
-                                await updater.run()
-                            else:
-                                updater.run()
+                    for section, task_class in self.task_registry:
+                        logger.debug(f"Updater task '{section}' checking runnable")
+                        updater = task_class(self.config, self.map_data)
+                        if self.should_run(updater, clear_output=True):
+                            try:
+                                logger.info(f"Running scheduled task: '{section}'")
 
-                            # Timestamp the completion with high precision
-                            self.last_run_times[section] = datetime.now()
+                                # Handle both sync and async run methods
+                                if section in ["shipping", "lightning"]:
+                                    await updater.run()
+                                else:
+                                    updater.run()
 
-                            # Will trigger xplanet to update
-                            self.map_updated = True
+                                # Timestamp the completion with high precision
+                                self.last_run_times[section] = datetime.now()
 
-                            # Will allow composite overlay to update
-                            if section in [
-                                "clouds",
-                                "clouds_nasa",
-                                "isobars",
-                                "wind",
-                                "precipitation",
-                                "sst"
-                            ]:
-                                self.weather_image_updated = True
+                                # Will trigger xplanet to update
+                                self.map_updated = True
 
-                        except Exception as e:
-                            logger.error(f"Task '{section}' execution failed: {e}")
+                                # Will allow composite overlay to update
+                                if section in [
+                                    "clouds",
+                                    "clouds_nasa",
+                                    "isobars",
+                                    "wind",
+                                    "precipitation",
+                                    "sst"
+                                ]:
+                                    self.weather_image_updated = True
 
-                self.starting_up = False
-                logger.info("Map-builder scheduler run finished")
+                            except Exception as e:
+                                logger.error(f"Task '{section}' execution failed: {e}")
+
+                    self.starting_up = False
+                    logger.info("Map-builder scheduler run finished")
+            else:
+                logger.info("Map-builder scheduler disabled: skipping")
 
             # Heartbeat sleep
             await asyncio.sleep(10)

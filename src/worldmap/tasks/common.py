@@ -187,16 +187,14 @@ class MapData:
         common_settings = self.config.get_section("common")
         target_geometry = common_settings.get("target_geometry", fallback="2048x1024")
         target_width, target_height = map(int, target_geometry.split('x'))
-
-        xplanet_settings = self.config.get_section("xplanet")
         self.region = MapRegion(
-            xplanet_settings.get("region", fallback=None),
+            self.config.get_setting("common", "region"),
             target_width,
             target_height
         )
 
         # Override longitude if we are viewing a global region
-        user_longitude = xplanet_settings.get("longitude", fallback=None)
+        user_longitude = self.config.get_setting("xplanet", "longitude")
         if user_longitude and self.region.world_view:
             self.region.centre_longitude = user_longitude
 

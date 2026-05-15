@@ -74,7 +74,7 @@ services:
     env_file:
       - .env
     environment:
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=INFO
       - TZ=Pacific/Auckland
       - PYTHONPATH=/opt/project/src
       - PYTHONUNBUFFERED=1

@@ -4,8 +4,10 @@ import logging
 import asyncio
 import aiohttp
 from datetime import datetime, timedelta, timezone
+
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.db import Database
+from worldmap.lib.logging import set_loglevel
 
 logger = logging.getLogger("worldmap.weather_scanner")
 
@@ -25,13 +27,17 @@ class WeatherScanner:
 
     def refresh_settings(self):
         self.config.load()
-        self.primary_region_label = self.config.get_section("xplanet").get("region")
+        self.primary_region_label = self.config.get_setting("common", "region")
         self.settings = self.config.get_section("weather_scanner")
         self.url = self.settings.get("url")
         self.api_key = self.settings.get("api_key", fallback=None)
         if not self.api_key:
             logger.error("OpenWeather API key not set")
             sys.exit(1)
+        # Adjust log level if changed
+        log_level = self.settings.get("log_level", fallback=None)
+        if log_level:
+            set_loglevel(log_level)
 
     def get_grid_for_bbox(self, bbox):
         """
@@ -80,7 +86,7 @@ class WeatherScanner:
     async def scan_region(self, session, label, bbox, start_iso, end_iso):
         """Processes all blocks within a specific named region."""
         grid = self.get_grid_for_bbox(bbox)
-        logger.info(f"Scanning region '{label}': {len(grid)} blocks.")
+        logger.debug(f"Scanning region '{label}': {len(grid)} blocks.")
 
         # Batch size of 5 to remain stable
         for i in range(0, len(grid), 5):
@@ -93,34 +99,41 @@ class WeatherScanner:
         while True:
             self.refresh_settings()
 
-            # Time window for scan
-            now = datetime.now(timezone.utc)
-            start_iso = (now - timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
-            end_iso = now.strftime('%Y-%m-%dT%H:%M:%SZ')
+            if self.settings.getboolean("enabled", fallback=False):
+                logger.info("Weather Scanner Service: Starting regional scans.")
 
-            # Get the ordered list from the DB
-            regions = self.db.get_priority_region_list(self.primary_region_label)
+                # Time window for scan
+                now = datetime.now(timezone.utc)
+                start_iso = (now - timedelta(minutes=20)).strftime('%Y-%m-%dT%H:%M:%SZ')
+                end_iso = now.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-            async with aiohttp.ClientSession() as session:
-                for reg in regions:
-                    label = reg['label']
-                    bbox_tuple = (
-                        reg['lon_min'], reg['lat_min'],
-                        reg['lon_max'], reg['lat_max']
-                    )
+                # Get the ordered list from the DB
+                regions = self.db.get_priority_region_list(self.primary_region_label)
 
-                    # Log if this is the priority region for visibility in logs
-                    prefix = "[PRIORITY] " if label == self.primary_region_label else ""
-                    logger.info(f"{prefix}Starting scan for {label}")
+                async with aiohttp.ClientSession() as session:
+                    for reg in regions:
+                        label = reg['label']
+                        bbox_tuple = (
+                            reg['lon_min'], reg['lat_min'],
+                            reg['lon_max'], reg['lat_max']
+                        )
 
-                    await self.scan_region(session, label, bbox_tuple, start_iso, end_iso)
+                        # Log if this is the priority region for visibility in logs
+                        prefix = "[PRIORITY] " if label == self.primary_region_label else ""
+                        logger.debug(f"{prefix}Starting scan for {label}")
 
-            # Prune old data (older than 2 hours)
-            pruned = self.db.prune_lightning(expiry_hours=2)
-            if pruned:
-                logger.info(f"Pruned {pruned} expired strikes.")
+                        await self.scan_region(session, label, bbox_tuple, start_iso, end_iso)
 
-            logger.info("Cycle complete. Sleeping 10 minutes.")
+                # Prune old data
+                expiry_hours = self.settings.getint("expiry_hours", fallback=2)
+                pruned = self.db.prune_lightning(expiry_hours=expiry_hours)
+                if pruned:
+                    logger.debug(f"Pruned {pruned} expired strikes.")
+
+                logger.info("Scan complete.")
+            else:
+                logger.debug("Weather Scanner Service: disabled. Skipping scan.")
+
             await asyncio.sleep(600)
 
 

@@ -4,10 +4,12 @@ import json
 import logging
 import asyncio
 import websockets
+
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.db import Database
+from worldmap.lib.logging import set_loglevel
 
-logger = logging.getLogger("worldmap.ship_scanner")
+logger = logging.getLogger("worldmap.shipping_collector")
 
 # A 10-element shipping density map (Weight x Base Duration)
 # 1.0 is standard, >1.0 spends extra time, <1.0 is a quick pass
@@ -45,6 +47,11 @@ class ShippingCollector:
         if not self.api_key:
             logger.error("AIS API key not set")
             sys.exit(1)
+        # Adjust log level if changed
+        log_level = self.settings.get("log_level", fallback=None)
+        if log_level:
+            set_loglevel(log_level)
+
 
     async def collect_ships_in_region(self, bbox, duration, label):
         """Connects to AIS stream and processes messages for a specific bbox."""
@@ -66,8 +73,8 @@ class ShippingCollector:
                 await ws.send(json.dumps(sub))
                 start_time = asyncio.get_event_loop().time()
 
-                logger.info(f"Collecting shipping for {duration}s")
-                logger.info(f"{label}")
+                logger.debug(f"Collecting shipping for {duration}s")
+                logger.debug(f"{label}")
 
                 while asyncio.get_event_loop().time() - start_time < duration:
                     try:
@@ -103,7 +110,7 @@ class ShippingCollector:
                     except Exception as e:
                         logger.error(f"Error processing message in {label}: {e}")
 
-                logger.info(f"Updated {static_count} static, {pos_count} positions")
+                logger.debug(f"Updated {static_count} static, {pos_count} positions")
 
         except Exception as e:
             logger.error(f"Connection error for region {label}: {e}")
@@ -120,46 +127,51 @@ class ShippingCollector:
         slice_width = 36.0
 
         while True:
-            logger.info("Shipping Collector Service: Starting weighted global rotation")
             self.refresh_settings()
 
-            start_total = self.db.get_current_ship_total()
+            if self.settings.getboolean("enabled", fallback=False):
+                logger.info("Shipping Collector Service: Starting weighted global rotation")
 
-            try:
-                self.db.prune_vessel_tracks(track_expiry)
+                start_total = self.db.get_current_ship_total()
 
-                # Random starting slice
-                start_offset = random.randrange(num_chunks)
-                chunk_indices = [(start_offset + i) % num_chunks for i in range(num_chunks)]
+                try:
+                    # Remove expired shipping tracks
+                    self.db.prune_vessel_tracks(track_expiry)
 
-                for i in chunk_indices:
-                    # Get slice metadata
-                    meta = SLICE_DENSITY_MAP.get(i)
-                    weight = meta["weight"]
+                    # Random starting slice
+                    start_offset = random.randrange(num_chunks)
+                    chunk_indices = [(start_offset + i) % num_chunks for i in range(num_chunks)]
 
-                    # Calculate dynamic duration
-                    effective_duration = int(base_duration * weight)
+                    for i in chunk_indices:
+                        # Get slice metadata
+                        meta = SLICE_DENSITY_MAP.get(i)
+                        weight = meta["weight"]
 
-                    lon_start = -180.0 + (i * slice_width)
-                    lon_end = lon_start + slice_width
+                        # Calculate dynamic duration
+                        effective_duration = int(base_duration * weight)
 
-                    if i == num_chunks - 1:
-                        lon_end = 180.0
+                        lon_start = -180.0 + (i * slice_width)
+                        lon_end = lon_start + slice_width
 
-                    chunk_bbox = [[-90.0, lon_start], [90.0, lon_end]]
-                    chunk_label = f"Slice {i} [{meta['label']}]"
+                        if i == num_chunks - 1:
+                            lon_end = 180.0
 
-                    # Log the specific duration for transparency in journalctl
-                    logger.info(f"{chunk_label}")
+                        chunk_bbox = [[-90.0, lon_start], [90.0, lon_end]]
+                        chunk_label = f"Slice {i} [{meta['label']}]"
 
-                    await self.collect_ships_in_region(chunk_bbox, effective_duration, chunk_label)
+                        # Log the specific duration for transparency in journalctl
+                        logger.info(f"{chunk_label}")
 
-                end_total = self.db.get_current_ship_total()
-                logger.info(f"Rotation complete. Added {end_total - start_total} new vessels.")
+                        await self.collect_ships_in_region(chunk_bbox, effective_duration, chunk_label)
 
-            except Exception as e:
-                logger.error(f"Unexpected error in collection loop: {e}")
-                await asyncio.sleep(30)
+                    end_total = self.db.get_current_ship_total()
+                    logger.info(f"Rotation complete. Added {end_total - start_total} new vessels.")
+
+                except Exception as e:
+                    logger.error(f"Unexpected error in collection loop: {e}")
+                    await asyncio.sleep(30)
+            else:
+                logger.debug("Shipping Collector Service disabled. Skipping.")
 
             await asyncio.sleep(sleep_between_runs)
 
