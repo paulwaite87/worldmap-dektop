@@ -3,9 +3,11 @@
 ## What is this?
 
 A Docker container-based system that features a number of data acquisition scripts for Clouds, Isobars, Wind,
-Storm tracking, Earthquakes, Volcanoes, and Shipping before utilizing `xplanet` to render an image of The World
-or part of it, for your desktop. There is also a daemon which will monitor the folder this image is generated
-in, and update your desktop wallpaper with what is essentially a live view of what's happening on the planet.
+Rain, Lightning Strikes, Storm tracking, Earthquakes, Volcanoes, and Shipping before utilizing `xplanet` to
+render it all as an image of The World or part of it, for your desktop.
+
+There is also a daemon which will monitor the folder this image is generated in, and update your desktop wallpaper
+with what is essentially a live view of what's happening on the planet.
 
 ![World Map Example](docs/worldmap-example.jpg)
 
@@ -43,7 +45,8 @@ to tinker with, not `xplanet.conf` (unless you know what you are doing).
 This configuration file is in .ini format. Each section controls one of the processes involved 
 in producing the map, and each has an `enabled` flag. If that is set to `False` the process 
 will be skipped. Out of the box, the system will have the shipping processes skipped, because an 
-API Key is needed for that data (easily obtained, see below).
+API Key is needed for that data (easily obtained, see below). The same applies to the weather
+scanner process.
 
 ### Building and running
 All main actions you will want to perform with the system can be done via `make`. Have a
@@ -69,45 +72,47 @@ If this all worked as it should, you will see the logs showing that both the `ha
 the `map_builder` are working.
 
 A healthy repeating cycle will look something like this in the logs:
- 
-    harvester    | 2026-05-03 19:42:02,661 [INFO] worldmap.harvester: Ship-harvester Service: Starting weighted global rotation
-    harvester    | 2026-05-03 19:42:02,683 [INFO] worldmap.harvester: Slice 9 [Australia / NZ / Japan / West Pacific]
-    harvester    | 2026-05-03 19:42:03,950 [INFO] worldmap.harvester: Harvesting for 360s
-    harvester    | 2026-05-03 19:42:03,950 [INFO] worldmap.harvester: Slice 9 [Australia / NZ / Japan / West Pacific]
-    map_builder  | 2026-05-03 19:42:07,872 [INFO] worldmap.map_builder: Map-builder scheduler run started
-    map_builder  | 2026-05-03 19:42:07,872 [INFO] worldmap.map_builder: Running scheduled task: 'clouds'
-    map_builder  | 2026-05-03 19:42:08,627 [INFO] worldmap.map_builder: Running scheduled task: 'isobars'
-    map_builder  | 2026-05-03 19:42:19,155 [INFO] worldmap.map_builder: Running scheduled task: 'composite'
-    map_builder  | 2026-05-03 19:42:19,321 [INFO] worldmap.map_builder: Running scheduled task: 'quakes'
-    map_builder  | 2026-05-03 19:42:20,469 [INFO] worldmap.map_builder: Running scheduled task: 'shipping'
-    map_builder  | 2026-05-03 19:42:21,480 [INFO] worldmap.map_builder: Running scheduled task: 'xplanet'
-    map_builder  | 2026-05-03 19:42:21,805 [INFO] worldmap.map_builder: Map-builder scheduler run finished
-    harvester    | 2026-05-03 19:48:04,479 [INFO] worldmap.harvester: Updated 109 static, 612 positions
-    harvester    | 2026-05-03 19:48:05,388 [INFO] worldmap.harvester: Slice 0 [Mid-Pacific (East)]
-    harvester    | 2026-05-03 19:48:06,393 [INFO] worldmap.harvester: Harvesting for 150s
-    harvester    | 2026-05-03 19:48:06,393 [INFO] worldmap.harvester: Slice 0 [Mid-Pacific (East)]
-    harvester    | 2026-05-03 19:50:37,023 [INFO] worldmap.harvester: Updated 6 static, 36 positions
-    harvester    | 2026-05-03 19:50:37,836 [INFO] worldmap.harvester: Slice 1 [Eastern Pacific / Americas West]
-    harvester    | 2026-05-03 19:50:39,348 [INFO] worldmap.harvester: Harvesting for 210s
-    harvester    | 2026-05-03 19:50:39,348 [INFO] worldmap.harvester: Slice 1 [Eastern Pacific / Americas West]
-    harvester    | 2026-05-03 19:54:09,540 [INFO] worldmap.harvester: Updated 304 static, 1718 positions
-    ....
 
-At this point, in summary, the `harvester` is a process which endlessly listens for messages
-coming from vessels around the globe, so it is solely concerned with acquiring the data for
-the shipping part of the World map.
+    shipping_collector  | 2026-05-15 15:47:11,624 [INFO] worldmap.shipping_collector: Shipping Collector Service: Starting weighted global rotation
+    weather_scanner     | 2026-05-15 15:47:11,931 [INFO] worldmap.weather_scanner: Weather Scanner Service: Starting regional scans.
+    map_builder         | 2026-05-15 15:53:23,623 [INFO] worldmap.map_builder: Map-builder scheduler run started
+    map_builder         | 2026-05-15 15:53:23,623 [INFO] worldmap.map_builder: Running scheduled task: 'clouds'
+    map_builder         | 2026-05-15 15:53:23,808 [INFO] worldmap.map_builder: Running scheduled task: 'isobars'
+    map_builder         | 2026-05-15 15:53:24,427 [INFO] worldmap.map_builder: Running scheduled task: 'precipitation'
+    map_builder         | 2026-05-15 15:53:25,050 [INFO] worldmap.map_builder: Running scheduled task: 'composite'
+    map_builder         | 2026-05-15 15:53:28,969 [INFO] worldmap.map_builder: Running scheduled task: 'storms'
+    map_builder         | 2026-05-15 15:53:30,686 [INFO] worldmap.tasks.storms: Storm CSV cache is up to date.
+    map_builder         | 2026-05-15 15:53:30,689 [INFO] worldmap.tasks.storms: Storm markers are up to date. Skipping.
+    map_builder         | 2026-05-15 15:53:30,691 [INFO] worldmap.map_builder: Running scheduled task: 'lightning'
+    map_builder         | 2026-05-15 15:53:30,794 [INFO] worldmap.tasks.lightning: Placed 27 strikes
+    map_builder         | 2026-05-15 15:53:30,795 [INFO] worldmap.map_builder: Running scheduled task: 'quakes'
+    map_builder         | 2026-05-15 15:53:31,696 [INFO] worldmap.map_builder: Running scheduled task: 'shipping'
+    map_builder         | 2026-05-15 15:53:32,794 [INFO] worldmap.tasks.shipping: Shipping update complete. Placed 18463 ships in region.
+    map_builder         | 2026-05-15 15:53:32,829 [INFO] worldmap.map_builder: Running scheduled task: 'xplanet'
+    map_builder         | 2026-05-15 15:53:33,566 [INFO] worldmap.tasks.renderer: Successfully generated map: ./data/1778817212-regionmap.jpg
+    map_builder         | 2026-05-15 15:53:33,566 [INFO] worldmap.map_builder: Map-builder scheduler run finished
+
+At this point, in summary, the `shipping_collector` is a process which endlessly listens for
+messages coming from vessels around the globe, so it is solely concerned with acquiring the
+data for the shipping part of the World map.
+
+The `weather_scanner` is a process which endlessly receives data regarding lightning strikes
+in the regions you have defined in the database. Being ephemeral these records are regularly
+culled from the database automatically according to the `expiry_hours` setting in the 
+`[weather_scanner]` section of the config file.
 
 The `map_builder` is the process which puts together all the elements (including shipping)
 which get displayed on the map. Again, this process is endlessly repeating, so your map
 will change through the day as the elements are updated.
 
 ### Desktop Geometry and Location
-Edit your `config/worldmap.conf` and go down to the `[xplanet]` section. There you 
-should set the `geometry` to match your desktop. You can also set `longitude` such that
-it centres the map over your location. Of course the latter is optional.
+Edit your `config/worldmap.conf` and look in the first `[common]` section. There you 
+should set the `desktop_geometry` to match your desktop. The other geometry setting
+is `target_geometry` which controls the resolution of what we download. I find that
+4096x2048 is a good value.
 
 ### Obtaining an API Key for Shipping data
-The `harvester` needs an API Key to access the AIS stream carrying shipping messages.
+The `shipping_collector` needs an API Key to access the AIS stream carrying shipping messages.
 
 To obtain one, head on over to https://aisstream.io/documentation on that page you will see 
 a link to `Sign In` (https://aisstream.io/authenticate) which will ask you to sign in to their 
@@ -115,9 +120,22 @@ Github. Obviously if you don't have a Github account you will have to sign up fo
 
 The process of obtaining the API Key is easy once you are signed in. There is a link `API Keys` 
 and you can create one there. Copy the key, and then back in the root directory copy `.env.tmpl` 
-to a new file named `.env`. Edit that file and replace the placeholder there with your newly 
-acquired API Key. You will now be able to edit `config/worldmap.conf` and set the `enabled` 
-flags to True in the `[shipping]` and `[shipping_harvester]` sections.
+to a new file named `.env`. Edit that file and replace the `AIS_API_KEY` placeholder there
+with your newly minted API Key. You will now be able to edit `config/worldmap.conf` and set
+the `enabled` flags to True in the `[shipping]` and `[shipping_harvester]` sections.
+
+### Obtaining an API Key for Weather/Lightning Strikes
+This is for the `weather_scanner` and it's a similar deal, but also easy. You just need to
+create an account on https://openweathermap.org and the link to acquire an API Key is right
+there on the homepage. Just be aware it will take some hours before the key is made active.
+
+In your `.env` file do as above and put the key in for the `OPENWEATHER_API_KEY` setting.
+
+Once the `weather_scanner` process is enabled and running, you will find that the table
+in the database called `lightning_strikes` will acquire data, though it also gets culled
+every few hours (`expiry_hours` setting in that section) so won't get too populated.
+
+A `make status` command will show the number of strikes in each region.
 
 ### Shipping Data Acquisition
 Ships broadcast data in the form of messages continuously at regular intervals. The main message 
@@ -128,8 +146,8 @@ IMO number (International Maritime Organization number). This message is broadca
 frequently, but the data is extremely useful to identify the type of vessel and its current 
 loading state (draught).
 
-The `harvester` is specific to shipping data, and repeatedly listens for the relatively infrequent 
-`ShipStaticData` messages and the more frequent `PositionReport` messages.
+The `shipping_collector` is specific to shipping data, and repeatedly listens for the relatively
+infrequent `ShipStaticData` messages and the more frequent `PositionReport` messages.
 
 It will gradually populate your database `ships` table with them. It does this by slicing the 
 globe up into 10 segments by longitude, and then listening in each slice defined as a bounding box. 
@@ -153,13 +171,17 @@ One useful command for shipping is:
 
     make status
 
-That will print out some status info about ships in each region, and ship totals.
+That will print out some status info about ships in each region, ship totals and also lightning
+strikes per region.
 
 ### The Map Builder
 Apart from shipping there are, of course, other elements to the map display. These are:
 
 * Clouds
 * Isobars
+* Rainfall
+* Wind
+* Lightning strikes
 * Active storms
 * Earthquakes
 * Volcanoes
@@ -184,11 +206,15 @@ so I generally don't display them) you can disable them by setting `enabled = Fa
 Storms will drop off the map when the `expiry_days` (see worldmap.conf [storm_markers] 
 section) is exceeded.
 
-With shipping icons there are basically two variants Cargo (has a 'C' in the middle) and 
-Tankers ('T' in the middle). They each have their own default colours, but these can also 
-vary if the system detects their draught (loading) has decreased.
+If you select `Disc` ship icons there are basically two variants: Cargo (has a 'C' in
+the middle) and Tankers ('T' in the middle). They each have their own default colours,
+but these can also vary if the system detects their draught (loading) has decreased.
 
-Tip: If you have `filter_only_active_ships` set to True, shipping with speeds less than 
+If you select `Arrows` for the ship icons then there is a colour code: red for tankers,
+green for cargo, violet for passenger/other. Also the arrows will point in the direction
+that the vessel is heading currently.
+
+Tip: If you have `filter_ships_underway` set to True, shipping with speeds less than 
 1.0 knots, or flagged as anchored or moored are NOT displayed. This avoids masses of ship
 icons overlaying each other in port locations making a mess on the map.
 
