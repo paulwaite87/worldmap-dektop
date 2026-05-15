@@ -201,8 +201,15 @@ You can, however, force the system to refresh the map using the following:
 
     make force-map-refresh
 
-### Some further notes
+Though it should be noted that this will not recessarily result in data being refreshed
+from the upstream source. Where possible the system will do a HEAD request to find out
+if the remote data is newer than what we already have locally. If it isn't then we
+will just refresh the map using the locally cached data.
 
+If you really want a fresh start, then `sudo rm data/*` should do the trick! And if,
+for some reason you want to refresh the regional maps then `sudo rm data/regions/*`.
+
+### Some further notes
 Volcanoes are pretty much static day-to-day and can end up just cluttering up the map, 
 so I generally don't display them) you can disable them by setting `enabled = False`.
 
