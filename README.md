@@ -44,7 +44,7 @@ working within the repository.
 Configuration files live in the `config` folder, so get into that folder.
 
 Copy `worldmap.conf.example` to your own local `worldmap.conf`. This is the file you will want
-to tinker with, not `xplanet.conf` (unless you know what you are doing).
+to tinker with to filter what gets displayed and also how it gets displayed.
 
 This configuration file is in .ini format. Each section controls one of the processes involved 
 in producing the map, and each has an `enabled` flag. If that is set to `False` the process 
