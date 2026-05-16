@@ -178,18 +178,22 @@ That will print out some status info about ships in each region, ship totals and
 strikes per region.
 
 ### The Map Builder
-Apart from shipping there are, of course, other elements to the map display. These are:
+Apart from shipping there are, of course, other elements to the map display. 
+The full list is:
 
 * Clouds
 * Isobars
 * Rainfall
-* Wind
+* Wind speed & direction
 * Sea surface temperature
 * Ocean currents
+* Wave height & direction
+* Surface temperature
 * Lightning strikes
 * Active storms
 * Earthquakes
 * Volcanoes
+* Shipping
 
 Each of these has its own section in the `worldmap.conf` file. Hopefully the settings in
 each section are fairly self-explanatory. The one which is common to all is of course
