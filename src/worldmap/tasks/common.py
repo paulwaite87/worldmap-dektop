@@ -267,6 +267,15 @@ class Updater:
         else:
             pass
 
+    def get_output_path_if_exists(self, section=None):
+        """Returns an output path for the given section, but only if the file exists"""
+        outfile = self.config.get_setting(section if section else self.section, "outfile")
+        if outfile:
+            output_path = str(os.path.join(self.common.get("workdir", "."), outfile))
+            if os.path.exists(output_path):
+                return output_path
+        return None
+
     def remove_output_file(self):
         """Clears the output file of this updater if it exists"""
         output_path = self.get_output_path()

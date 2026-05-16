@@ -25,6 +25,7 @@ from worldmap.tasks.storms import StormUpdater
 from worldmap.tasks.lightning import LightningUpdater
 from worldmap.tasks.quakes import QuakeUpdater
 from worldmap.tasks.shipping import ShippingUpdater
+from worldmap.tasks.currents import CurrentsUpdater
 from worldmap.tasks.volcanoes import VolcanoUpdater
 from worldmap.tasks.renderer import XPlanetRenderer
 
@@ -47,7 +48,7 @@ class MapBuilder:
         self.map_updated = False
 
         # Flag to indicate isobars or clouds were updated so run composite
-        self.weather_image_updated = False
+        self.composite_layers_updated = False
 
         # Register the signal handler for SIGUSR1
         # In Docker/Linux, this is often signal 10
@@ -61,6 +62,7 @@ class MapBuilder:
             ("wind", WindUpdater),
             ("precipitation", PrecipitationUpdater),
             ("sst", SSTUpdater),
+            ("currents", CurrentsUpdater),
             ("composite", CompositeUpdater),
             ("storms", StormUpdater),
             ("lightning", LightningUpdater),
@@ -109,7 +111,7 @@ class MapBuilder:
 
         # Composite produces the weather image from clouds and/or isobars,
         # so we run that if they were updated
-        if updater.section == "composite" and self.weather_image_updated:
+        if updater.section == "composite" and self.composite_layers_updated:
             return True
 
         # Handle special case of xplanet renderer, which doesn't have a schedule
@@ -144,7 +146,7 @@ class MapBuilder:
             if self.enabled:
                 self.map_data.refresh()
                 self.map_updated = False
-                self.weather_image_updated = False
+                self.composite_layers_updated = False
 
                 if self.starting_up or self.config.has_changed or self.tasks_ready_to_run():
                     logger.info("Map-builder scheduler run started")
@@ -175,9 +177,10 @@ class MapBuilder:
                                     "isobars",
                                     "wind",
                                     "precipitation",
-                                    "sst"
+                                    "sst",
+                                    "currents"
                                 ]:
-                                    self.weather_image_updated = True
+                                    self.composite_layers_updated = True
 
                             except Exception as e:
                                 logger.error(f"Task '{section}' execution failed: {e}")

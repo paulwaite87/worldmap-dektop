@@ -3,8 +3,8 @@
 ## What is this?
 
 A Docker container-based system that features a number of data acquisition scripts for Clouds, Isobars, Wind,
-Rain, Lightning Strikes, Storm tracking, Earthquakes, Volcanoes, and Shipping before utilizing `xplanet` to
-render it all as an image of The World or part of it, for your desktop.
+Rain, Lightning Strikes, Storm tracking, Earthquakes, Volcanoes, Sea Surface Temperature (SST), Ocean Currents
+and Shipping before utilizing `xplanet` to render it all as an image of The World or part of it, for your desktop.
 
 There is also a daemon which will monitor the folder this image is generated in, and update your desktop wallpaper
 with what is essentially a live view of what's happening on the planet.
@@ -83,6 +83,7 @@ A healthy repeating cycle will look something like this in the logs:
     map_builder         | 2026-05-15 15:53:23,623 [INFO] worldmap.map_builder: Running scheduled task: 'clouds'
     map_builder         | 2026-05-15 15:53:23,808 [INFO] worldmap.map_builder: Running scheduled task: 'isobars'
     map_builder         | 2026-05-15 15:53:24,427 [INFO] worldmap.map_builder: Running scheduled task: 'precipitation'
+    map_builder         | 2026-05-15 15:53:24,543 [INFO] worldmap.map_builder: Running scheduled task: 'currents'
     map_builder         | 2026-05-15 15:53:25,050 [INFO] worldmap.map_builder: Running scheduled task: 'composite'
     map_builder         | 2026-05-15 15:53:28,969 [INFO] worldmap.map_builder: Running scheduled task: 'storms'
     map_builder         | 2026-05-15 15:53:30,686 [INFO] worldmap.tasks.storms: Storm CSV cache is up to date.
@@ -184,6 +185,7 @@ Apart from shipping there are, of course, other elements to the map display. The
 * Rainfall
 * Wind
 * Sea surface temperature
+* Ocean currents
 * Lightning strikes
 * Active storms
 * Earthquakes
