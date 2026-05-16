@@ -25,15 +25,16 @@ class CompositeUpdater(Updater):
         self.set_output_path()
 
         # Config sections
+        self.clouds_section = "clouds"
         if self.config.section_enabled("clouds_nasa"):
-            self.clouds_settings = self.config.get_section("clouds_nasa")
-        else:
-            self.clouds_settings = self.config.get_section("clouds")
+            self.clouds_section = "clouds_nasa"
 
+        self.clouds_settings = self.config.get_section(self.clouds_section)
         self.sst_settings = self.config.get_section("sst")
         self.precip_settings = self.config.get_section("precipitation")
         self.isobar_settings = self.config.get_section("isobars")
         self.wind_settings = self.config.get_section("wind")
+        self.currents_settings = self.config.get_section("currents")
 
         # Enabled flags
         self.sst_enabled = self.config.section_enabled("sst")
@@ -41,6 +42,7 @@ class CompositeUpdater(Updater):
         self.precip_enabled = self.config.section_enabled("precipitation")
         self.isobars_enabled = self.config.section_enabled("isobars")
         self.wind_enabled = self.config.section_enabled("wind")
+        self.currents_enabled = self.config.section_enabled("currents")
 
     def _apply_cloud_transparency(self, cloud_img: Image.Image) -> Image.Image:
         """
@@ -75,16 +77,17 @@ class CompositeUpdater(Updater):
             logger.debug(f"Creating weather map image => {self.output_path}")
 
             # Source paths
-            sst_map_path = str(os.path.join(self.workdir, self.sst_settings.get("outfile", "")))
-            cloud_map_path = str(os.path.join(self.workdir, self.clouds_settings.get("outfile", "")))
-            precip_map_path = str(os.path.join(self.workdir, self.precip_settings.get("outfile", "")))
-            isobar_map_path = str(os.path.join(self.workdir, self.isobar_settings.get("outfile", "")))
-            wind_map_path = str(os.path.join(self.workdir, self.wind_settings.get("outfile", "")))
+            sst_map_path = self.get_output_path_if_exists("sst")
+            cloud_map_path = self.get_output_path_if_exists(self.clouds_section)
+            precip_map_path = self.get_output_path_if_exists("precipitation")
+            isobars_map_path = self.get_output_path_if_exists("isobars")
+            wind_map_path = self.get_output_path_if_exists("wind")
+            currents_map_path = self.get_output_path_if_exists("currents")
 
             regional_cloud_map = ""
 
             # Prepare the cloud base if enabled
-            if self.clouds_enabled:
+            if self.clouds_enabled and cloud_map_path:
                 p = Path(cloud_map_path)
                 regional_cloud_map = str(os.path.join(
                     self.workdir,
@@ -109,19 +112,22 @@ class CompositeUpdater(Updater):
         # --- Dynamic Compositing Logic ---
         layers = []
 
-        if self.sst_enabled:
+        if self.sst_enabled and sst_map_path:
             layers.append(("SST", sst_map_path))
 
-        if self.clouds_enabled:
+        if self.currents_enabled and currents_map_path:
+            layers.append(("Currents", currents_map_path))
+
+        if self.clouds_enabled and regional_cloud_map:
             layers.append(("Clouds", regional_cloud_map))
 
-        if self.precip_enabled:
+        if self.precip_enabled and precip_map_path:
             layers.append(("Precipitation", precip_map_path))
 
-        if self.isobars_enabled:
-            layers.append(("Isobars", isobar_map_path))
+        if self.isobars_enabled and isobars_map_path:
+            layers.append(("Isobars", isobars_map_path))
 
-        if self.wind_enabled:
+        if self.wind_enabled and wind_map_path:
             layers.append(("Wind", wind_map_path))
 
         if not layers:
