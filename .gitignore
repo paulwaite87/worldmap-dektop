@@ -9,6 +9,7 @@ data/*
 
 # --- Python ---
 .idea/
+.idea/workspace.xml
 .venv/
 .venv_wallpaper/
 __pycache__/
