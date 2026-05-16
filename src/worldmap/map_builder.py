@@ -20,12 +20,14 @@ from worldmap.tasks.isobars import IsobarUpdater
 from worldmap.tasks.wind import WindUpdater
 from worldmap.tasks.precipitation import PrecipitationUpdater
 from worldmap.tasks.sst import SSTUpdater
+from worldmap.tasks.currents import CurrentsUpdater
+from worldmap.tasks.waves import WavesUpdater
+from worldmap.tasks.temperature import TemperatureUpdater
 from worldmap.tasks.composite import CompositeUpdater
 from worldmap.tasks.storms import StormUpdater
 from worldmap.tasks.lightning import LightningUpdater
 from worldmap.tasks.quakes import QuakeUpdater
 from worldmap.tasks.shipping import ShippingUpdater
-from worldmap.tasks.currents import CurrentsUpdater
 from worldmap.tasks.volcanoes import VolcanoUpdater
 from worldmap.tasks.renderer import XPlanetRenderer
 
@@ -63,6 +65,8 @@ class MapBuilder:
             ("precipitation", PrecipitationUpdater),
             ("sst", SSTUpdater),
             ("currents", CurrentsUpdater),
+            ("waves", WavesUpdater),
+            ("temperature", TemperatureUpdater),
             ("composite", CompositeUpdater),
             ("storms", StormUpdater),
             ("lightning", LightningUpdater),
@@ -178,7 +182,9 @@ class MapBuilder:
                                     "wind",
                                     "precipitation",
                                     "sst",
-                                    "currents"
+                                    "currents",
+                                    "waves",
+                                    "temperature"
                                 ]:
                                     self.composite_layers_updated = True
 
