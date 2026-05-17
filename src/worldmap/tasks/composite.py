@@ -9,7 +9,7 @@ from PIL import Image
 
 # Internal library import
 from worldmap.lib.config import WorldMapConfig
-from .common import Updater, MapData
+from .common import Updater, MapData, COMPOSITE_SECTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,7 @@ class CompositeUpdater(Updater):
         self.currents_enabled = self.config.section_enabled("currents")
         self.waves_enabled = self.config.section_enabled("waves")
         self.temperature_enabled = self.config.section_enabled("temperature")
+        self.storms_enabled = self.config.section_enabled("storms")
 
     def _apply_cloud_transparency(self, cloud_img: Image.Image) -> Image.Image:
         """
@@ -81,15 +82,7 @@ class CompositeUpdater(Updater):
             logger.debug(f"Creating weather map image => {self.output_path}")
 
             # Source paths
-            sst_map_path = self.get_output_path_if_exists("sst")
             cloud_map_path = self.get_output_path_if_exists(self.clouds_section)
-            precip_map_path = self.get_output_path_if_exists("precipitation")
-            isobars_map_path = self.get_output_path_if_exists("isobars")
-            wind_map_path = self.get_output_path_if_exists("wind")
-            currents_map_path = self.get_output_path_if_exists("currents")
-            waves_map_path = self.get_output_path_if_exists("waves")
-            temperature_map_path = self.get_output_path_if_exists("temperature")
-
             regional_cloud_map = ""
 
             # Prepare the cloud base if enabled
@@ -117,30 +110,13 @@ class CompositeUpdater(Updater):
 
         # --- Dynamic Compositing Logic ---
         layers = []
-
-        if self.sst_enabled and sst_map_path:
-            layers.append(("SST", sst_map_path))
-
-        if self.temperature_enabled and temperature_map_path:
-            layers.append(("Temperature", temperature_map_path))
-
-        if self.currents_enabled and currents_map_path:
-            layers.append(("Currents", currents_map_path))
-
-        if self.waves_enabled and waves_map_path:
-            layers.append(("Waves", waves_map_path))
-
-        if self.clouds_enabled and regional_cloud_map:
-            layers.append(("Clouds", regional_cloud_map))
-
-        if self.precip_enabled and precip_map_path:
-            layers.append(("Precipitation", precip_map_path))
-
-        if self.isobars_enabled and isobars_map_path:
-            layers.append(("Isobars", isobars_map_path))
-
-        if self.wind_enabled and wind_map_path:
-            layers.append(("Wind", wind_map_path))
+        for section in COMPOSITE_SECTIONS:
+            if self.config.section_enabled(section):
+                section_image_path = self.get_output_path_if_exists(section)
+                if section_image_path:
+                    if section in ["clouds", "clouds_nasa"]:
+                        section_image_path = regional_cloud_map
+                    layers.append((section, section_image_path))
 
         if not layers:
             logger.debug("No composite layers enabled. Skipping.")

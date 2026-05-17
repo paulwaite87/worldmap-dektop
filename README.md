@@ -185,10 +185,10 @@ The full list is:
 * Isobars
 * Rainfall
 * Wind speed & direction
-* Sea surface temperature
+* Sea surface temperature (absolute or anomaly)
 * Ocean currents
 * Wave height & direction
-* Surface temperature
+* Air temperature (absolute or anomaly)
 * Lightning strikes
 * Active storms
 * Earthquakes

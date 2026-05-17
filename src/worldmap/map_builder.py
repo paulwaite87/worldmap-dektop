@@ -10,6 +10,7 @@ from typing import Dict, Optional, Type, Tuple, List, Any
 # Library imports
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.logging import setup_logging, set_loglevel
+from worldmap.tasks.common import COMPOSITE_SECTIONS
 
 
 # Task imports
@@ -67,8 +68,8 @@ class MapBuilder:
             ("currents", CurrentsUpdater),
             ("waves", WavesUpdater),
             ("temperature", TemperatureUpdater),
-            ("composite", CompositeUpdater),
             ("storms", StormUpdater),
+            ("composite", CompositeUpdater),
             ("lightning", LightningUpdater),
             ("quakes", QuakeUpdater),
             ("shipping", ShippingUpdater),
@@ -175,17 +176,7 @@ class MapBuilder:
                                 self.map_updated = True
 
                                 # Will allow composite overlay to update
-                                if section in [
-                                    "clouds",
-                                    "clouds_nasa",
-                                    "isobars",
-                                    "wind",
-                                    "precipitation",
-                                    "sst",
-                                    "currents",
-                                    "waves",
-                                    "temperature"
-                                ]:
+                                if section in COMPOSITE_SECTIONS:
                                     self.composite_layers_updated = True
 
                             except Exception as e:

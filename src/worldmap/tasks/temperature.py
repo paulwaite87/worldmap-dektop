@@ -5,6 +5,7 @@ import warnings
 import requests
 import numpy as np
 import xarray as xr
+import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
 
@@ -123,17 +124,13 @@ class TemperatureUpdater(Updater):
         """Plots an underlying 2-meter surface temperature heatmap
         with optional isotherm contour lines and an overlay color key.
         """
-        import matplotlib.pyplot as plt
         from scipy.interpolate import griddata
 
         logger.debug(f"Plotting Temperature Data for {self.map_data.region.region_identifier}")
 
-        palette_name = self.settings.get("palette", fallback="global_thermal")
-        if palette_name not in self.PALETTES:
-            palette_name = "global_thermal"
-
         alpha_setting = self.settings.getfloat("alpha", fallback=0.75)
         alpha_setting = np.clip(alpha_setting, 0.1, 1.0)
+        mode = self.settings.get("mode", fallback="absolute").strip().lower()
 
         show_freezing_line = self.settings.getboolean("show_freezing_line", fallback=True)
 
@@ -188,21 +185,55 @@ class TemperatureUpdater(Updater):
         grid_lat = np.linspace(lat_min, lat_max, 300)
         mesh_lon, mesh_lat = np.meshgrid(grid_lon, grid_lat)
 
+        # Absolute temperature grid (always retained for the freezing line overlay)
         temp_grid = griddata(points, temp_raw_c, (mesh_lon, mesh_lat), method='linear', fill_value=np.nan)
 
-        # 4. Initialize Core Canvas
+        # 4. Dynamic Mode Processing (Absolute vs Automated Anomaly)
+        if mode == "anomaly":
+            spatial_mean = np.nanmean(temp_grid)
+            display_data = temp_grid - spatial_mean
+
+            cmap_name = "coolwarm"
+            cmap = plt.get_cmap(cmap_name)
+
+            # AUTOMATED RANGE ENGINE
+            # Captures 98th percentile of absolute deviations to ignore single extreme outliers
+            abs_anomalies = np.abs(display_data)
+            calculated_range = float(np.nanpercentile(abs_anomalies, 98))
+            anomaly_range = max(0.5, calculated_range)  # Safety buffer to prevent 0-scale collapse
+
+            vmin, vmax = -anomaly_range, anomaly_range
+            levels = np.linspace(vmin, vmax, 86)
+            norm = mcolors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+
+            title_text = "Air Temp Regional Anomaly (°C)"
+            calculated_ticks = np.linspace(vmin, vmax, 5)
+            tick_format = '%.1f'
+        else:
+            display_data = temp_grid
+
+            palette_name = self.settings.get("palette", fallback="global_thermal")
+            if palette_name not in self.PALETTES:
+                palette_name = "global_thermal"
+
+            custom_rgba_list = [(r, g, b, alpha_setting) for (r, g, b) in self.PALETTES[palette_name]]
+            cmap = mcolors.LinearSegmentedColormap.from_list("surface_temp", custom_rgba_list, N=256)
+
+            vmin, vmax = -40.0, 45.0
+            levels = np.linspace(vmin, vmax, 86)
+            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+
+            title_text = "Temperature (°C)"
+            calculated_ticks = [-40, -20, 0, 15, 30, 45]
+            tick_format = '%d'
+
+        # 5. Initialize Core Canvas
         plot = Plot(self.map_data.region)
         plot.get_figure()
 
-        # 5. Render Temperature Contour Heatmap
-        custom_rgba_list = [(r, g, b, alpha_setting) for (r, g, b) in self.PALETTES[palette_name]]
-        cmap = mcolors.LinearSegmentedColormap.from_list("surface_temp", custom_rgba_list, N=256)
-
-        levels = np.linspace(-40.0, 45.0, 86)
-        norm = mcolors.Normalize(vmin=-40.0, vmax=45.0)
-
+        # 6. Render Heatmap (Using mode-dependent data)
         cf = plot.ax.contourf(
-            grid_lon, grid_lat, temp_grid,
+            grid_lon, grid_lat, display_data,
             levels=levels,
             cmap=cmap,
             norm=norm,
@@ -212,7 +243,7 @@ class TemperatureUpdater(Updater):
             zorder=2
         )
 
-        # 6. Render Freezing Line Isotherm
+        # 7. Render Freezing Line Isotherm (Always using absolute temp_grid!)
         if show_freezing_line:
             plot.ax.contour(
                 grid_lon, grid_lat, temp_grid,
@@ -225,9 +256,7 @@ class TemperatureUpdater(Updater):
                 zorder=4
             )
 
-        # 7. ENHANCEMENT: DYNAMIC ADJUSTED COLOR KEY OVERLAY
-        # Format: [left_x, bottom_y, width, height]
-        # Uses split-difference modifications to preserve labels and viewport clearance bounds
+        # 8. ENHANCEMENT: DYNAMIC ADJUSTED COLOR KEY OVERLAY
         position_map = {
             "top-left":     [0.04, 0.89, 0.28, 0.03],
             "top-right":    [0.68, 0.89, 0.28, 0.03],
@@ -238,7 +267,6 @@ class TemperatureUpdater(Updater):
         bbox_coords = position_map.get(key_position, position_map["bottom-right"])
         cbar_ax = plot.ax.inset_axes(bbox_coords, transform=plot.ax.transAxes)
 
-        # Apply slight translucent backing plate behind the color key for high visibility
         cbar_ax.patch.set_facecolor('#111111')
         cbar_ax.patch.set_alpha(0.4)
 
@@ -246,14 +274,15 @@ class TemperatureUpdater(Updater):
             cf,
             cax=cbar_ax,
             orientation='horizontal',
-            ticks=[-40, -20, 0, 15, 30, 45]
+            ticks=calculated_ticks
         )
 
-        # Style the color scale numbers and labels beautifully using padded alignments
+        # Style the color scale numbers
         cbar.ax.xaxis.set_tick_params(color='white', labelsize=key_fontsize, labelcolor='white', pad=3)
+        cbar.ax.xaxis.set_major_formatter(plt.FormatStrFormatter(tick_format))
         cbar.outline.set_edgecolor('white')
         cbar.outline.set_linewidth(0.5)
-        cbar.ax.set_title("Temperature (°C)", color='white', fontsize=key_fontsize, pad=5, weight='bold')
+        cbar.ax.set_title(title_text, color='white', fontsize=key_fontsize, pad=5, weight='bold')
 
         plot.save_figure(self.output_path)
 
@@ -261,7 +290,7 @@ class TemperatureUpdater(Updater):
         if callable(plt_close):
             plt_close()
 
-        logger.debug("Temperature plotting sequence completed successfully.")
+        logger.debug(f"Temperature ({mode} mode) plotting sequence completed successfully.")
 
     def run(self):
         self.exit_if_disabled()

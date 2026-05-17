@@ -18,6 +18,20 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+# These are sections which contribute to the composite layer
+# image used in XPlanet rendering via the 'cloud"map' option
+COMPOSITE_SECTIONS = [
+    "sst",
+    "temperature",
+    "currents",
+    "waves",
+    "clouds",
+    "clouds_nasa"
+    "precipitation",
+    "isobars",
+    "wind",
+    "storms"
+]
 
 def stringify_bbox(bbox):
     """

@@ -8,7 +8,7 @@ import subprocess
 
 from worldmap.lib.config import WorldMapConfig
 from worldmap.lib.maps import NASAGIBSDownloader
-from .common import Updater, MapData
+from .common import Updater, COMPOSITE_SECTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +27,16 @@ class XPlanetRenderer(Updater):
         self.region_dir = os.path.join(self.workdir, "data", "regions")
         os.makedirs(self.region_dir, exist_ok=True)
 
-        # Weather imagery flags
+        # These settings determine whether to show the composite layer
+        # via the 'cloud_map' option in xplanet
         self.composite_enabled = self.config.section_enabled("composite")
-        self.clouds_enabled = self.config.section_enabled("clouds")
-        self.isobars_enabled = self.config.section_enabled("isobars")
-        self.wind_enabled = self.config.section_enabled("wind")
-        self.precipitation_enabled = self.config.section_enabled("precipitation")
-        self.sst_enabled = self.config.section_enabled("sst")
+        self.composite_has_content = False
+
+        if self.composite_enabled:
+            for section in COMPOSITE_SECTIONS:
+                if self.config.section_enabled(section):
+                    self.composite_has_content = True
+                    break
 
     def get_regional_maps(self):
         """Returns paths for day/night maps, downloading if missing from cache."""
@@ -97,15 +100,12 @@ class XPlanetRenderer(Updater):
             # Therefore: {lat_max, lon_min, lat_min, lon_max}
             f.write(f"mapbounds={{{self.map_region_bbox[3]},{self.map_region_bbox[0]},{self.map_region_bbox[1]},{self.map_region_bbox[2]}}}\n")
 
-            # Whether to display the weather
-            if self.composite_enabled and (self.clouds_enabled or self.isobars_enabled or self.wind_enabled or self.precipitation_enabled or self.sst_enabled):
+            # Whether to display the composite overlay. We use the XPlanet
+            # 'cloud_map' mechanism to display our composite .png image
+            if self.composite_enabled and self.composite_has_content:
                 f.write(f'cloud_map={self.config.get_section("composite").get("outfile")}\n')
                 f.write("cloud_threshold=0\n")
                 f.write("cloud_gamma=1.0\n")
-
-            # Show active storms
-            if self.config.section_enabled("storms"):
-                f.write(f'marker_file={self.config.get_section_outfile("storms")}\n')
 
             # Show lightning activity
             if self.config.section_enabled("lightning"):
@@ -123,7 +123,7 @@ class XPlanetRenderer(Updater):
             if self.config.section_enabled("shipping"):
                 f.write(f'marker_file={self.config.get_section_outfile("shipping")}\n')
 
-            # Additional marker files from config
+            # Additional marker files from a list in the config
             marker_files = json.loads(self.settings.get("marker_files", fallback='[]'))
             for marker_file in marker_files:
                 f.write(f"marker_file={marker_file}\n")
