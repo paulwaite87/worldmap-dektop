@@ -1,6 +1,6 @@
 # Makefile for WorldMap Project Suite
 
-.PHONY: run stop build rebuild start-desktop stop-desktop psql logs clean purge backup restore force-map-refresh
+.PHONY: run stop build rebuild start-desktop stop-desktop psql logs clean purge backup restore force-map-refresh test
 
 # Variables
 DB_USER = wmap
@@ -26,6 +26,13 @@ rebuild: stop
 
 logs:
 	docker compose logs -f
+
+# Run Integration Tests via Automated PyTest Discovery Engine
+test:
+	@echo "Ensuring map_builder container environment is active..."
+	docker compose up map_builder -d
+	@echo "Running complete discovery test suite via pytest..."
+	docker compose exec map_builder pytest tests/ -v
 
 # Database Backups
 # -Fc: Custom compressed format

@@ -26,7 +26,7 @@ COMPOSITE_SECTIONS = [
     "currents",
     "waves",
     "clouds",
-    "clouds_nasa"
+    "clouds_nasa",
     "precipitation",
     "isobars",
     "wind",
