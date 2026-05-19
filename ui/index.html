@@ -235,10 +235,29 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             try {
+                // 1. Fetch dynamic regions from the database first
+                const regionSelect = document.getElementById('common__region');
+                const regionRes = await fetch("http://localhost:8000/api/regions");
+                const regionJson = await regionRes.json();
+
+                // Clear out the hardcoded HTML options and set the global default fallback
+                regionSelect.innerHTML = '<option value="">Whole World</option>';
+
+                if (regionJson.status === "success") {
+                    regionJson.data.forEach(r => {
+                        const opt = document.createElement('option');
+                        opt.value = r.label;
+                        opt.textContent = r.label;
+                        regionSelect.appendChild(opt);
+                    });
+                }
+
+                // 2. Now fetch the flat configuration file data
                 const response = await fetch(API_URL);
                 const res = await response.json();
                 masterConfigCache = res.data;
 
+                // 3. Run your original parsing and layout rendering engines
                 parseExplicitElements(masterConfigCache);
                 renderTabContainers(masterConfigCache);
 
@@ -248,6 +267,7 @@
                 document.getElementById('loading').remove();
                 document.getElementById('configForm').classList.remove('d-none');
             } catch (err) {
+                console.error(err);
                 document.getElementById('loading').innerHTML = "<span class='text-danger'>❌ API Endpoint Unreachable. Ensure container is healthy.</span>";
             }
         });

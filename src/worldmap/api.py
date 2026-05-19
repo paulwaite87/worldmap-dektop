@@ -3,6 +3,7 @@ import os
 import configparser
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from worldmap.lib.db import Database
 
 app = FastAPI(title="WorldMap Double Underscore API")
 
@@ -25,6 +26,20 @@ def load_raw_config():
     return config
 
 
+@app.get("/api/regions")
+def get_regions():
+    try:
+        # Get current region from config to prioritize it in the list
+        config = load_raw_config()
+        current_region = config.get("common", "region", fallback="Whole World")
+
+        db = Database()
+        # Returns list of dicts: [{'label': 'NZ', ...}, {'label': 'Europe', ...}]
+        regions = db.get_priority_region_list(current_region)
+
+        return {"status": "success", "data": regions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/api/config")
 def get_config():
     config = load_raw_config()
