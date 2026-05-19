@@ -8,34 +8,34 @@ DB_NAME = worldmap
 DB_SERVICE = worldmap_db
 DUMP_FILE = worldmap_dump.sql
 
-# Start/Stop/Build
+## run: Bring all containers up in background, build if required
 run:
 	docker compose up -d
 
-start: run
-	@echo "Starting"
-
+## stop: Bring all containers down
 stop:
 	docker compose down
 
+## build: Build images if changed
 build: stop
 	docker compose build
 
+## rebuild: Rebuild all images from scratch
 rebuild: stop
 	docker compose build --no-cache
 
+## logs: Tail logs for all containers
 logs:
 	docker compose logs -f
 
-# Run Integration Tests via Automated PyTest Discovery Engine
+## test: Run all tests
 test:
 	@echo "Ensuring map_builder container environment is active..."
 	docker compose up map_builder -d
 	@echo "Running complete discovery test suite via pytest..."
 	docker compose exec map_builder pytest tests/ -v
 
-# Database Backups
-# -Fc: Custom compressed format
+## backup: Backup database to local worldmap-dump.sql file
 backup:
 	@echo "Ensuring worldmap database is running"
 	docker compose up worldmap_db -d
@@ -43,10 +43,7 @@ backup:
 	docker compose exec $(DB_SERVICE) pg_dump -U $(DB_USER) -Fc $(DB_NAME) > $(DUMP_FILE)
 	@echo "Backup complete."
 
-# Database Restore
-# 1. Stop dependent services to prevent active connections
-# 2. Drop and Recreate database using pg_restore
-# 3. Restart services
+## restore: Restores the local worldmap-dump.sql backup
 restore:
 	@echo "WARNING: This will DELETE and RECREATE the $(DB_NAME) database from $(DUMP_FILE)."
 	@if [ ! -f $(DUMP_FILE) ]; then echo "Error: $(DUMP_FILE) not found."; exit 1; fi
@@ -61,34 +58,34 @@ restore:
 	@echo "Stopping worldmap database."
 	@docker compose stop worldmap_db
 
-# Clean/Purge
+## clean: Stop containers, remove images
 clean:
 	docker compose down --rmi all
 	@echo "Containers stopped and project-specific images removed."
 
+## purge: DANGEROUS! Delete all containers, images and data volumes
 purge:
 	@echo "WARNING: This will delete ALL containers, images, and PERSISTENT DATA volumes."
 	@read -p "Are you absolutely sure? [y/N] " ans && [ $${ans:-N} = y ]
 	docker compose down --rmi all --volumes
 	@echo "System purged. Database volumes have been deleted."
 
-# Desktop Management
-start-desktop:
-	nohup ./wallpaper_updater.sh &
-	@echo "Wallpaper updater started in background."
-
+## stop-desktop: Kill the desktop background updater
 stop-desktop:
 	@pkill -f wallpaper_updater.sh || echo "No update process found."
 
-# Database Access
+## start-desktop: Start the desktop map updater in the foreground
+start-desktop-fg:
+	./wallpaper_updater.sh
+	@echo "Wallpaper updater started."
+
+## psql: Open psql session in map database
 psql:
 	@echo "Ensuring worldmap database is running"
 	@docker compose up worldmap_db -d
 	@docker compose exec $(DB_SERVICE) psql -U $(DB_USER) $(DB_NAME)
 
-# Database Status Report
-# 1. Reports ship counts per region (spatial check)
-# 2. Reports database composition based on lib/shipping.py logic
+## status: Database Status Report
 status:
 	@echo "--- Ships Located in Each Region ---"
 	@docker compose exec -T $(DB_SERVICE) psql -U $(DB_USER) $(DB_NAME) -c \
@@ -112,7 +109,12 @@ status:
 	 GROUP BY r.label \
 	 ORDER BY strikes DESC;"
 
-# Force the map builder to reset its schedule and run all tasks immediately
-force-map-refresh:
+## refresh-map: Force map builder to refresh wallpaper
+refresh-map:
 	@docker kill --signal=SIGUSR1 map_builder
 	@echo "Refresh signal sent"
+
+## help: Show this help menu
+help:
+	@echo "Available commands:"
+	@sed -n 's/^##//p' $(MAKEFILE_LIST) | awk '{printf "  \033[36m%-20s\033[0m %s\n", $$1, substr($$0, index($$0,$$2))}'
