@@ -61,7 +61,6 @@ class ShippingUpdater(Updater):
         return icon_filename
 
     async def run(self):
-        self.config.load()
         self.exit_if_disabled()
 
         ship_db = Database()
