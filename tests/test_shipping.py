@@ -55,7 +55,7 @@ def generate_mock_fleet():
             "nav_status": 0  # Underway using engine
         },
         {
-            # INVALID: Fails 'min_length' filter (10m < 50m).
+            # INVALID: Fails 'show_ships_min_length' filter (10m < 50m).
             "mmsi": 222222222,
             "name": "TINY TUGBOAT",
             "vessel_type": 52,  # Tug

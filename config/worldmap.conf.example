@@ -264,10 +264,10 @@ vei_min = 5
 # D6 - A.D.1 to 1499
 # D7 - B.C. (Holocene)
 # U  - Undated, prob. Holocene
-# Q  - Quaternary (very fucking old!)
+# Q  - Quaternary (ancient!)
 # ?  - Uncertain Holocene
-# Show only volcanoes with on of this list of date codes
-erupt_date_codes_list = "D1"
+# Show only volcanoes with one of these date codes:
+erupt_date_codes = D1
 runs_per_day = 1
 
 [shipping]
@@ -285,20 +285,19 @@ label_fontsize = 12
 # 'T' - Tanker. Red = loaded; Lime green = unloaded
 # Purple discs are for Passenger ships and all other vessel types
 show_ship_icons = default
-#show_ship_icons = Discs
-#show_ship_icons = Arrows
+# Show only ships moving >1.0 knots and not flagged as moored or anchored
+filter_ships_underway = False
 # Comma-separated list of vessel classes. Possible values: Passenger, Tanker, Cargo
 # Leave empty to show all vessels.
-filter_show_ship_classes_list =
+filter_show_ship_classes =
 # Show names for specific classes of ship (same options as for filter_show_ship_classes)
 # Leave as an empty list to suppress all names
-filter_show_names_for_classes_list =
+filter_show_names_for_classes =
 # Show ships with lengths >= this (metres 0=>no filtering)
 # Use this to filter out the small-fry
 filter_ships_minimum_length = 100
-# Show only ships moving >1.0 knots and not flagged as moored or anchored
-filter_ships_underway = False
-# Only show ships with these names. Useful with tracking on (see below).
+# Only show ships with these names (comma-separated list)
+# Useful with tracking on (see below).
 filter_show_ships_by_name =
 # Whether to show vessel tracks. Useful mainly when filtering
 # to specific ship names otherwise the data is too dense

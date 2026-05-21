@@ -72,14 +72,16 @@ class ShippingUpdater(Updater):
         track_min_dist = float(self.settings.get("track_min_distance_km", fallback=5.0))
         track_max_points = self.settings.getint("track_max_points", fallback=10)
 
+        base_label_fontsize = float(self.settings.getint("label_fontsize", fallback=12))
+        label_color_default = self.settings.get("marker_color", fallback="red")
+
+        # Ship filtering
         show_ships_underway = self.settings.getboolean("show_ships_underway", fallback=False)
         show_ship_icons = self.settings.get("show_ship_icons", fallback=None)
         show_ship_classes = listify(self.settings.get("filter_show_ship_classes", fallback='Tanker, Cargo'))
         show_names_classes = listify(self.settings.get("filter_show_names_for_classes", fallback=''))
         show_ships_by_name = listify(self.settings.get("filter_show_ships_by_name", fallback=''))
-        min_length = self.settings.getint("filter_ships_minimum_length", fallback=0)
-        base_label_fontsize = float(self.settings.getint("label_fontsize", fallback=12))
-        label_color_default = self.settings.get("marker_color", fallback="red")
+        show_ships_min_length = self.settings.getint("filter_ships_minimum_length", fallback=0)
 
         fleet = ship_db.get_fleet(map_region_name, expiry_days=expiry)
         written_count = 0
@@ -90,8 +92,7 @@ class ShippingUpdater(Updater):
 
                 # Length Filter
                 ship_length, ship_beam = ship.get_vessel_dimensions()
-
-                if ship_length < min_length:
+                if ship_length < show_ships_min_length:
                     continue
 
                 # Class Filter
