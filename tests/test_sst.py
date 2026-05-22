@@ -8,16 +8,14 @@ from tests.common import test_env, check_url_accessibility, verify_generated_ima
 
 
 class MockSSTUpdater(SSTUpdater):
-    def __init__(self, config, map_data, test_nc_path, test_output_path, mode_override):
+    def __init__(self, config, map_data, test_nc_path, mode_override):
         super().__init__(config, map_data)
         self.nc_path = test_nc_path
-        self.output_path = test_output_path
+        self.set_output_path()
 
         # Override structural modes dynamically at execution runtime
         self.mode = mode_override
-        base_url = self.settings.get("url",
-                                     fallback="https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres").strip().rstrip(
-            '/')
+        base_url = self.settings.get("url").strip().rstrip('/')
         self.target_url = f"{base_url}/sst.day.anom.2026.nc" if self.mode == "anomaly" else f"{base_url}/sst.day.mean.2026.nc"
 
     def generate_mock_netcdf(self):
@@ -60,9 +58,8 @@ class MockSSTUpdater(SSTUpdater):
 @pytest.mark.parametrize("sst_mode", ["absolute", "anomaly"])
 def test_sst_pipeline(test_env, sst_mode):
     test_nc = os.path.join(test_env["project_root"], "data", f"test_sst_{sst_mode}_cache.nc")
-    test_output_png = os.path.join(test_env["project_root"], "data", f"test_sst_{sst_mode}_output.png")
 
-    updater = MockSSTUpdater(test_env["config"], test_env["map_data"], test_nc, test_output_png, sst_mode)
+    updater = MockSSTUpdater(test_env["config"], test_env["map_data"], test_nc, sst_mode)
 
     try:
         # 1. URL Accessibility Assertion

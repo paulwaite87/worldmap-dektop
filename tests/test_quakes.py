@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
+import logging
+import requests
 from unittest.mock import patch, MagicMock
 
 # Append project root to path to ensure clean internal imports
@@ -24,23 +26,43 @@ class MockConfigSection:
 
 class MockQuakeUpdater(QuakeUpdater):
     """Subclass of production QuakeUpdater that isolates execution for testing."""
-    def __init__(self, config, map_data, test_output_path):
+    def __init__(self, config, map_data):
         super().__init__(config, map_data)
-        self.output_path = test_output_path
+        self.set_output_path()
 
     def exit_if_disabled(self):
         """Bypass the enabled/disabled check during unit testing."""
         pass
 
+def test_quake_url_inaccessible(test_env, caplog):
+    """Test that the QuakeUpdater cleanly handles and logs an inaccessible URL."""
+    updater = MockQuakeUpdater(test_env["config"], test_env["map_data"])
+
+    url = "http://example.com/nonexistent"
+    updater.settings = MockConfigSection({
+        "url": url
+    })
+
+    # 1. Mock the network request to fail deterministically
+    with patch("worldmap.tasks.quakes.requests.get") as mock_get:
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Client Error")
+        mock_get.return_value = mock_resp
+
+        # 2. Capture the log output and run
+        with caplog.at_level(logging.ERROR):
+            updater.run()
+
+    # 3. Assert that the expected error was captured by the logging framework
+    assert any("Error fetching quakes: 404 Client Error" in record.message for record in caplog.records)
 
 def test_quake_pipeline(test_env):
-    test_output_txt = os.path.join(test_env["project_root"], "data", "test_quakes_output.txt")
-    updater = MockQuakeUpdater(test_env["config"], test_env["map_data"], test_output_txt)
+    updater = MockQuakeUpdater(test_env["config"], test_env["map_data"])
 
     # 1. Force the configuration to guarantee specific execution paths
     # We explicitly test the magnitude float parsing and fallback defaults.
     updater.settings = MockConfigSection({
-        "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.csv",
+        "url": updater.settings.get("url"),
         "marker_color": "red",
         "marker_symbol": "quake.png",
         "label_fontsize": "14",
@@ -49,9 +71,9 @@ def test_quake_pipeline(test_env):
 
     # 2. Base URL Reachability Assertion
     # Verifies the live USGS feed endpoint is actually online.
-    live_url = updater.settings.get("url")
-    assert live_url, "Quakes 'url' configuration is missing!"
-    assert check_url_accessibility(live_url.strip(), "USGS Earthquake Feed")
+    base_url = updater.settings.get("url")
+    assert base_url, "Quakes 'url' configuration is missing!"
+    assert check_url_accessibility(base_url.strip(), "USGS Earthquake Feed")
 
     # 3. Dependency Injection / Mocking
     # Provide a mock CSV payload with three quakes: Mag 6.2, Mag 4.2 (Should filter), and Mag 5.1

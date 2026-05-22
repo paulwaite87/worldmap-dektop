@@ -72,5 +72,7 @@ def test_env():
         pytest.fail(f"Config file missing at: {config_path}")
 
     config = WorldMapConfig(config_path)
+    config.setup_for_tests(project_root)
+
     map_data = MockMapData()
     return {"project_root": project_root, "config": config, "map_data": map_data}

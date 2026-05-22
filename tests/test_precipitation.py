@@ -16,9 +16,9 @@ from tests.common import test_env, check_url_accessibility, verify_generated_ima
 class MockPrecipitationUpdater(PrecipitationUpdater):
     """Subclass of production PrecipitationUpdater that forces isolated testing output paths."""
 
-    def __init__(self, config, map_data, test_output_path):
+    def __init__(self, config, map_data):
         super().__init__(config, map_data)
-        self.output_path = test_output_path
+        self.set_output_path()
         self.grib_path = "dummy_gfs_precip.grib2"
 
 
@@ -47,8 +47,7 @@ def test_precipitation_pipeline(test_env):
     # The production 'ds.sel()' slicing logic will now naturally protect your RAM.
     test_env["map_data"].region.bbox = [156.0, -22.0, 164.0, -14.0]
 
-    test_output_png = os.path.join(test_env["project_root"], "data", "test_precip_output.png")
-    updater = MockPrecipitationUpdater(test_env["config"], test_env["map_data"], test_output_png)
+    updater = MockPrecipitationUpdater(test_env["config"], test_env["map_data"])
 
     # 1. Base URL Reachability Assertion
     base_url = updater.settings.get("url")

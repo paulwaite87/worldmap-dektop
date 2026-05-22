@@ -6,9 +6,9 @@ from tests.common import test_env, check_url_accessibility, verify_generated_ima
 
 
 class MockStormUpdater(StormUpdater):
-    def __init__(self, config, map_data, test_output_path):
+    def __init__(self, config, map_data):
         super().__init__(config, map_data)
-        self.output_path = test_output_path
+        self.set_output_path()
 
     def generate_and_render_mock(self, lat, lon):
         mock_data = []
@@ -27,11 +27,7 @@ class MockStormUpdater(StormUpdater):
 
 
 def test_storm_pipeline(test_env):
-    updater = MockStormUpdater(
-        test_env["config"],
-        test_env["map_data"],
-        os.path.join(test_env["project_root"], "data", "test_storms_output.png")
-    )
+    updater = MockStormUpdater(test_env["config"], test_env["map_data"])
 
     # 1. URL Asset Safety Assertions
     ibtracs_base = updater.settings.get("ibtracs_url")

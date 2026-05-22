@@ -54,8 +54,4 @@ class QuakeUpdater(Updater):
             logger.debug(f"Earthquake update complete. Updated {len(filtered_df)} quakes.")
 
         except requests.RequestException as e:
-            logger.error(f"Network error fetching quakes: {e}")
-            sys.exit(1)
-        except Exception as e:
-            logger.error(f"Unexpected error in quakes task: {e}")
-            sys.exit(1)
+            logger.error(f"Error fetching quakes: {e}")

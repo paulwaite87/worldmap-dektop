@@ -16,9 +16,9 @@ from tests.common import test_env, check_url_accessibility, verify_generated_ima
 class MockTemperatureUpdater(TemperatureUpdater):
     """Subclass of production TemperatureUpdater that forces isolated testing output paths."""
 
-    def __init__(self, config, map_data, test_output_path, mode_override):
+    def __init__(self, config, map_data, mode_override):
         super().__init__(config, map_data)
-        self.output_path = test_output_path
+        self.set_output_path()
         self.grib_path = "dummy_gfs_temp.grib2"
 
         # Override dynamic configuration modes at runtime
@@ -53,8 +53,7 @@ def test_temperature_pipeline(test_env, temp_mode):
     # Zooming into a crisp 8x8 degree window tracking our simulated matrix anomaly.
     test_env["map_data"].region.bbox = [156.0, -22.0, 164.0, -14.0]
 
-    test_output_png = os.path.join(test_env["project_root"], "data", f"test_temp_{temp_mode}_output.png")
-    updater = MockTemperatureUpdater(test_env["config"], test_env["map_data"], test_output_png, temp_mode)
+    updater = MockTemperatureUpdater(test_env["config"], test_env["map_data"], temp_mode)
 
     # 1. Base URL Reachability Assertion
     base_url = updater.settings.get("url")

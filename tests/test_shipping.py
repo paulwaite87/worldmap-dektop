@@ -33,9 +33,9 @@ class MockConfigSection:
 class MockShippingUpdater(ShippingUpdater):
     """Subclass of production ShippingUpdater that forces isolated testing output paths."""
 
-    def __init__(self, config, map_data, test_output_path):
+    def __init__(self, config, map_data):
         super().__init__(config, map_data)
-        self.output_path = test_output_path
+        self.set_output_path()
 
 
 def generate_mock_fleet():
@@ -94,8 +94,7 @@ def generate_mock_track():
 
 @pytest.mark.asyncio
 async def test_shipping_pipeline(test_env):
-    test_output_txt = os.path.join(test_env["project_root"], "data", "test_shipping_output.txt")
-    updater = MockShippingUpdater(test_env["config"], test_env["map_data"], test_output_txt)
+    updater = MockShippingUpdater(test_env["config"], test_env["map_data"])
 
     # 1. Force the configuration using our MockConfigSection
     updater.settings = MockConfigSection({

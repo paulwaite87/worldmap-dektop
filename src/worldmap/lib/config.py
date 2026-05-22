@@ -2,6 +2,9 @@ import os
 import configparser
 import logging
 import ast
+from pathlib import Path
+
+from aiohttp.web_fileresponse import extension
 
 from worldmap.lib.logging import set_loglevel
 
@@ -121,5 +124,19 @@ class WorldMapConfig:
         if self.config.has_section(section):
             self.config.set(section, setting, value)
 
-
-
+    def setup_for_tests(self, project_root):
+        """Tweak the configuration for testing purposes."""
+        self.update_setting("common", "workdir", project_root)
+        for section in self.config.sections():
+            self.update_setting(section, "enabled", "True")
+            current_outfile = self.get_setting(section, "outfile")
+            if current_outfile:
+                original_path = Path(current_outfile)
+                self.update_setting(
+                    section,
+                    "outfile",
+                    str(os.path.join(
+                        original_path.parent,
+                        f"test_{original_path.stem}{original_path.suffix}"
+                    ))
+                )
