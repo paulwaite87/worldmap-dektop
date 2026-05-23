@@ -14,7 +14,6 @@ dependencies = [
     "cartopy==0.25.0",
     "cfgrib==0.9.15.1",
     "configparser==7.2.0",
-    "createcloudmap==0.99.0",
     "dask==2026.3.0",
     "datetime==6.0",
     "eccodes==2.46.0",

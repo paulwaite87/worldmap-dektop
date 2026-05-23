@@ -543,16 +543,6 @@ wheels = [
 ]
 
 [[package]]
-name = "createcloudmap"
-version = "0.99.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "python-dateutil" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/7f/7e7f8f2919cf6ff8747e5408d3cc564dc644aceea85873dd052df14b627b/CreateCloudMap-0.99.0.tar.gz", hash = "sha256:6b92baff334c956f449d5069d227354add29f7918b3c4ff6f6c922dfcf44993d", size = 61637, upload-time = "2024-01-13T15:55:33.931Z" }
-
-[[package]]
 name = "cycler"
 version = "0.12.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2392,7 +2382,6 @@ dependencies = [
     { name = "cartopy" },
     { name = "cfgrib" },
     { name = "configparser" },
-    { name = "createcloudmap" },
     { name = "dask" },
     { name = "datetime" },
     { name = "eccodes" },
@@ -2441,7 +2430,6 @@ requires-dist = [
     { name = "cartopy", specifier = "==0.25.0" },
     { name = "cfgrib", specifier = "==0.9.15.1" },
     { name = "configparser", specifier = "==7.2.0" },
-    { name = "createcloudmap", specifier = "==0.99.0" },
     { name = "dask", specifier = "==2026.3.0" },
     { name = "datetime", specifier = "==6.0" },
     { name = "eccodes", specifier = "==2.46.0" },
