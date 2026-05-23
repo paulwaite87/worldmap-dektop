@@ -70,7 +70,7 @@ def test_composite_pipeline(test_env):
     p = Path(clouds_path)
     regional_cloud_map = os.path.join(
         updater.workdir, "data", "regions",
-        f"{p.stem}_{updater.map_data.region.region_identifier}.png"
+        f"{p.stem}_{updater.map_data.region.region_identifier}_{updater.target_width}x{updater.target_height}.png"
     )
     assert os.path.exists(regional_cloud_map), "Regional transparency cloud map was not generated!"
 

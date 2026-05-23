@@ -44,18 +44,23 @@ working within the repository.
 Configuration files live in the `config` folder, so get into that folder.
 
 Copy `worldmap.conf.example` to your own local `worldmap.conf`. This is the file you will want
-to tinker with to filter what gets displayed and also how it gets displayed.
+to tinker with to filter what gets displayed and also how it gets displayed. Don't worry, there
+is a handy configuration tool for that which is described below.
 
-This configuration file is in .ini format. Each section controls one of the processes involved 
-in producing the map, and each has an `enabled` flag. If that is set to `False` the process 
-will be skipped. Out of the box, the system will have the shipping processes skipped, because an 
-API Key is needed for that data (easily obtained, see below). The same applies to the weather
-scanner process.
+For those who like to hand-edit file this configuration file is in .ini format. Each section
+controls one of the processes involved in producing the map, and each has an `enabled` flag.
+If that is set to `False` the process will be skipped. Out of the box, the system will have 
+the shipping processes skipped, because an API Key is needed for that data (easily obtained, see below). 
+The same applies to the weather scanner process.
+
+Now that you have your `worldmap.conf` in place, let's get it all up and running.
 
 ### Building and running
-All main actions you will want to perform with the system can be done via `make`. Have a
-look in the `Makefile` for the possible targets/actions you can use. There are quite a few
-more than the ones mentioned below.
+All main actions you will want to perform with the system from the command line can be
+done via `make`. Have a look in the `Makefile` for the possible targets/actions you can use.
+There are quite a few. To list all possible make targets:
+
+    make help
 
 The map machinery runs in Docker containers. To start it all up (this will pull and 
 build everything first, if not already built) use the following command from the root
@@ -63,19 +68,19 @@ directory of the repo you just cloned.
 
     make run
 
-To see what it's doing just use:
+That will run everything in the background. To see what it's doing just use:
 
     make logs
 
 On your first run of the system it will create and initialise a Postgresql/PostGIS database. This
-database will be seeded with a few regions, which can be used to restrict where you populate
-ships on the map. That can be useful if you have a lot of vessels being displayed. You can add
-as many regions as you want.
+Anyhow, after that little digression, back to basics. If this all worked as it should you 
+will see the logs showing the `map_builder` is working. As mentioned before:
 
-If this all worked as it should, you will see the logs showing that the `shipping_collector`,
-`weather_scanner` and the `map_builder` are all working.
+    make logs
 
-A healthy repeating cycle will look something like this in the logs:
+A healthy repeating cycle might look something like this. Obviously the below example
+shows shipping and weather scanner output, which you won't see out of the box unless you
+already acquired API keys and enabled them.
 
     shipping_collector  | 2026-05-15 15:47:11,624 [INFO] worldmap.shipping_collector: Shipping Collector Service: Starting weighted global rotation
     weather_scanner     | 2026-05-15 15:47:11,931 [INFO] worldmap.weather_scanner: Weather Scanner Service: Starting regional scans.
@@ -97,23 +102,15 @@ A healthy repeating cycle will look something like this in the logs:
     map_builder         | 2026-05-15 15:53:33,566 [INFO] worldmap.tasks.renderer: Successfully generated map: ./data/1778817212-regionmap.jpg
     map_builder         | 2026-05-15 15:53:33,566 [INFO] worldmap.map_builder: Map-builder scheduler run finished
 
-At this point, in summary, the `shipping_collector` is a process which endlessly listens for
-messages coming from vessels around the globe, so it is solely concerned with acquiring the
-data for the shipping part of the World map.
-
-The `weather_scanner` is a process which endlessly receives data regarding lightning strikes
-in the regions you have defined in the database. Being ephemeral these records are regularly
-culled from the database automatically according to the `expiry_hours` setting in the 
-`[weather_scanner]` section of the config file.
-
-The `map_builder` is the process which puts together all the elements (including shipping)
-which get displayed on the map. Again, this process is endlessly repeating, so your map
-will change through the day as the elements are updated.
+The `map_builder` is the main process which puts together all the elements which get displayed 
+on the map. Again, this process is endlessly repeating, so your map will change through the 
+day as the elements are updated.
 
 ### Configuration UI
-There is a handy configuration tool available to you if you don't like editing files.
+There is a handy configuration tool available so you don't have to manually edit the
+configuration file `config/worldmap.conf`.
 
-After firing the system up, go to the following in your web browser:
+After firing the system up as decribed above, go to the following in your web browser:
 http://localhost:8180/
 
 You should see this screen, and be able to change system behaviour there easily.
@@ -128,9 +125,32 @@ manual editing approach, edit your `config/worldmap.conf` and look in the first
 The other geometry setting is `target_geometry` which controls the resolution
 of what we download. I find that 4096x2048 is a good value.
 
+The `Region` setting controls what part of the World the map is displaying. The
+list of regions is in the database and can be modified by you (see below).
+
 The `Show` tab controls what gets shown on the map. If elements are disabled here,
 then the applicable sections on the other tabs are also disabled and the settings on
 them hidden, to avoid clutter.
+
+### Regions
+The database will be seeded with a few regions, which can be used to zoom in on where 
+you want to populate elements on the map. You can add as many regions as you want. See 
+the `config/database/001_create_dbs.sql` for existing INSERT statements to copy.
+
+For the coords, go to https://tools.mofei.life/bbox#1/0/0 and navigate to wherever is 
+centre of the region you want on the World map there. Zoom in and then pull a bounding-box 
+with SHIFT-drag. In the WGS84 box `Copy` the bounding box coords and paste those (minus
+the square brackets) into your INSERT. The co-ordinate ordering is already correct. Give 
+your INSERT a new appropriate label, then copy that SQL statement onto your clipboard 
+and execute this command:
+
+    make psql
+
+That will get you into the WorldMap database PSQL shell. Paste your INSERT into that and
+hit enter. Bingo, a brand new region. The WorldMap configurator should read your new region
+and allow you to select it. The system will pull a dedicated region map at your specified
+target geometry so there is no degradation of resolution when you display a small region
+of the World. Perfect day/night maps care of NASA Blue Marble every time!
 
 ### Obtaining an API Key for Shipping data
 The `shipping_collector` needs an API Key to access the AIS stream carrying shipping messages.
