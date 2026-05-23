@@ -136,10 +136,10 @@ the `config/database/001_create_dbs.sql` for existing INSERT statements to copy.
 
 For the coords, go to https://tools.mofei.life/bbox#1/0/0 and navigate to wherever is 
 centre of the region you want on the World map there. Zoom in and then pull a bounding-box 
-with SHIFT-drag. In the WGS84 box `Copy` the bounding box coords and paste those (minus
-the square brackets) into your INSERT. The co-ordinate ordering is already correct. Give 
-your INSERT a new appropriate label, then copy that SQL statement onto your clipboard 
-and execute this command:
+with SHIFT-drag (TIP: ideally make it approx. 2:1 width:height). In the WGS84 box `Copy`
+the bounding box coords and paste those (minus the square brackets) into your INSERT.
+The co-ordinate ordering is already correct. Give your INSERT a new appropriate label, 
+then copy that SQL statement onto your clipboard and execute this command:
 
     make psql
 
