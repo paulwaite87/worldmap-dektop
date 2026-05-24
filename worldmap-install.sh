@@ -42,7 +42,7 @@ fi
 echo "Setting up wallpaper daemon..."
 curl -fsSL ${WORLDMAP_RAW_URL}/wallpaper_update_daemon.py -o wallpaper_update_daemon.py
 curl -fsSL ${WORLDMAP_RAW_URL}/wallpaper_updater.sh -o wallpaper_updater.sh
-chmod +x wallpaper_update.sh
+chmod +x wallpaper_updater.sh
 
 # Download the 'worldmap.sh' control script
 curl -fsSL ${WORLDMAP_RAW_URL}/worldmap.sh -o worldmap.sh
