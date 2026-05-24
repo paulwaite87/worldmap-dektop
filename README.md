@@ -35,36 +35,63 @@ After installation, run `sudo usermod -aG docker $USER` and log out and back in 
 to take effect. This will allow you to manage containers and orchestration seamlessly while 
 working within the repository.
 
-### Quick Method
+### For the ninjas: Clone the repository
+
+    cd /your/preferred/workspace
+    git clone -v https://github.com/paulwaite87/worldmap
+
+After that, most things can be done via the Makefile. To see what is available:
+
+    make help
+
+The rest of this README is written for folks who are not developers!
+
+### Quick Start
 The recommended method of getting this up and running is to use the pre-built
 images and the `worldmap-install.sh` script.
 
-Begin by visiting the repo on Github and downloading that file, or you can grab
-it directly using this link:
+Begin by visiting the repo on Github (which is where you are if you are reading this!)
+and downloading that file, or you can grab it directly using this link:
     https://raw.githubusercontent.com/paulwaite87/worldmap/refs/heads/master/worldmap-install.sh
 
-(You may have to make sure it is executable with a chmod a+x worldmap-install.sh)
+You may have to make sure it is executable with
+
+    chmod a+x worldmap-install.sh
 
 Then just run that:
 
     ./worldmap-install.sh
 
-By default this will install stuff in your home folder in a sub-folder called `worldmap`.
+By default this will install stuff in your home folder in a sub-folder called
+`worldmap`.
 
 If you want it to live somewhere else, then use this command instead:
 
     ./worldmap-install.sh /path/to/worldmap
 
-It will start everything running, but most things will be disabled to begin with. You
-should start by browsing to `http://localhost:8180` and selecting a region and
-maybe just `Clouds` as a start.
+Either of those will pull the pre-built images and will start everything running,
+but most things will be disabled to begin with.
 
-There is also a control script for stopping and starting things.
+### Setting it up
+The configuration file is called `worldmap.conf` and it lives in the `config` folder. 
+You can either edit this file directly, or browse to `http://localhost:8180` to use
+the configuration webpage there. If you do use that page, and save some changes they
+will overwrite your `worldmap.conf` obviously. Which is absolutely fine, except
+the original un-edited version that gets installed for you does have some quite 
+informative comments scattered through it so to preserve those to look at anytime, 
+you could make a backup copy of the file first.
+
+Anyway, I would suggest first selecting a region on the landing page, setting up
+your desktop geometry, and then in the `Atmospheric` tab just `Clouds` as a
+starting point.
+
+### Control
+There is a control script for managing things.
 
     ./worldmap.sh
 
 With no options, it will print out the commands it understands. The main one for
-updating your desktop would be:
+getting you desktop wallpaper updating would be:
 
     ./worldmap.sh map-start
 
@@ -72,49 +99,18 @@ And to stop it:
 
     ./worldmap.sh map-stop
 
-### For the ninjas: Clone the repository:
+See if that works for you. You should hopefully see your background change to a
+map of the region you selected, with a clouds overlay.
 
-    cd /your/preferred/workspace
-    git clone -v https://github.com/paulwaite87/worldmap
+### Logging
+If you use the control script thusly:
 
-#### Initial Setup
-Configuration files live in the `config` folder, so get into that folder.
+    ./worldmap.sh logs
 
-Copy `worldmap.conf.example` to your own local `worldmap.conf`. This is the file you will want
-to tinker with to filter what gets displayed and also how it gets displayed. Don't worry, there
-is a handy configuration tool for that which is described below.
-
-For those who like to hand-edit file this configuration file is in .ini format. Each section
-controls one of the processes involved in producing the map, and each has an `enabled` flag.
-If that is set to `False` the process will be skipped. Out of the box, the system will have 
-the shipping processes skipped, because an API Key is needed for that data (easily obtained, see below). 
-The same applies to the weather scanner process.
-
-Now that you have your `worldmap.conf` in place, let's get it all up and running.
-
-#### Building and running
-All main actions you will want to perform with the system from the command line can be
-done via `make`. Have a look in the `Makefile` for the possible targets/actions you can use.
-There are quite a few. To list all possible make targets:
-
-    make help
-
-The map machinery runs in Docker containers. To start it all up (this will pull and 
-build everything first, if not already built) use the following command from the root
-directory of the repo you just cloned.
-
-    make run
-
-That will run everything in the background. To see what it's doing just use:
-
-    make logs
-
-On your first run of the system it will create and initialise a Postgresql/PostGIS database. This
-If this all worked as it should you will see the logs showing the `map_builder` is working. 
-
-A healthy repeating cycle might look something like this. Obviously the below example
-shows shipping and weather scanner output, which you won't see out of the box unless you
-already acquired API keys and enabled them.
+The logging will be tailed to your console. A healthy repeating cycle might look 
+something like this. Obviously the below example shows shipping and weather 
+scanner output, which you won't see out of the box unless you already acquired
+API keys and enabled them.
 
     shipping_collector  | 2026-05-15 15:47:11,624 [INFO] worldmap.shipping_collector: Shipping Collector Service: Starting weighted global rotation
     weather_scanner     | 2026-05-15 15:47:11,931 [INFO] worldmap.weather_scanner: Weather Scanner Service: Starting regional scans.
@@ -140,51 +136,34 @@ The `map_builder` is the main process which puts together all the elements which
 on the map. Again, this process is endlessly repeating, so your map will change through the 
 day as the elements are updated.
 
-### Configuration UI
-There is a handy configuration tool available so you don't have to manually edit the
-configuration file `config/worldmap.conf`.
-
-After firing the system up as decribed above, go to the following in your web browser:
-http://localhost:8180/
-
-You should see this screen, and be able to change system behaviour there easily.
-
-![Configuration UI](docs/worldmap-configuration.png)
-
-### Desktop Geometry and Location
-In the above screen, edit your desktop geometry frst of all. Or if you like the
-manual editing approach, edit your `config/worldmap.conf` and look in the first
-`[common]` section. There you should set the `desktop_geometry` accordingly.
-
-The other geometry setting is `target_geometry` which controls the resolution
-of what we download. I find that 4096x2048 is a good value.
-
-The `Region` setting controls what part of the World the map is displaying. The
-list of regions is in the database and can be modified by you (see below).
-
-The `Show` tab controls what gets shown on the map. If elements are disabled here,
-then the applicable sections on the other tabs are also disabled and the settings on
-them hidden, to avoid clutter.
-
 ### Regions
 The database will be seeded with a few regions, which can be used to zoom in on where 
-you want to populate elements on the map. You can add as many regions as you want. See 
-the `config/database/001_create_dbs.sql` for existing INSERT statements to copy.
+you want to populate elements on the map. You can add as many regions as you want. 
+
+To add a region, we will need to get nerdy and insert data into your database. The
+format of an SQL statement which will do just is:
+
+    INSERT INTO map_region (label, boundary) VALUES ('My Region', ST_MakeEnvelope(-7.346384, 42.490591, 10.854976, 51.487329, 4326));
+
+Copy this somewhere that you can change it in an editor.
 
 For the coords, go to https://tools.mofei.life/bbox#1/0/0 and navigate to wherever is 
 centre of the region you want on the World map there. Zoom in and then pull a bounding-box 
 with SHIFT-drag (TIP: ideally make it approx. 2:1 width:height). In the WGS84 box `Copy`
 the bounding box coords and paste those (minus the square brackets) into your INSERT.
-The co-ordinate ordering is already correct. Give your INSERT a new appropriate label, 
-then copy that SQL statement onto your clipboard and execute this command:
+The co-ordinate ordering is already correct. Give your INSERT a new appropriate label,
+(replacing 'My Region', then copy that SQL statement onto your clipboard and execute
+this command:
 
-    make psql
+    ./worldmap.sh db
 
-That will get you into the WorldMap database PSQL shell. Paste your INSERT into that and
-hit enter. Bingo, a brand new region. The WorldMap configurator should read your new region
+That will get you into the World Map database PSQL shell. Paste your INSERT into that and
+hit enter. Bingo, a brand new region. The World Map configurator should read your new region
 and allow you to select it. The system will pull a dedicated region map at your specified
 target geometry so there is no degradation of resolution when you display a small region
 of the World. Perfect day/night maps care of NASA Blue Marble every time!
+
+Just hit Ctrl-d to get out of the database.
 
 ### Obtaining an API Key for Shipping data
 The `shipping_collector` needs an API Key to access the AIS stream carrying shipping messages.
@@ -194,10 +173,10 @@ a link to `Sign In` (https://aisstream.io/authenticate) which will ask you to si
 Github. Obviously if you don't have a Github account you will have to sign up for that first.
 
 The process of obtaining the API Key is easy once you are signed in. There is a link `API Keys` 
-and you can create one there. Copy the key, and then back in the root directory copy `.env.tmpl` 
-to a new file named `.env`. Edit that file and replace the `AIS_API_KEY` placeholder there
-with your newly minted API Key. You will now be able to edit `config/worldmap.conf` and set
-the `enabled` flags to True in the `[shipping]` and `[shipping_collector]` sections.
+and you can create one there. Copy the key, and then back in the root directory edit the
+file named `.env` and replace the `AIS_API_KEY` placeholder there with your newly minted 
+API Key. You will now be able to go into the World Map Configurator and on the `Show` tab 
+in the `Background Processes` enable either or both the Shipping and Weather processes.
 
 ### Obtaining an API Key for Weather/Lightning Strikes
 This is for the `weather_scanner` and it's a similar deal, but also easy. You just need to
@@ -213,13 +192,13 @@ every few hours (`expiry_hours` setting in that section) so won't get too popula
 A `make status` command will show the number of strikes in each region.
 
 ### Shipping Data Acquisition
-Ships broadcast data in the form of messages continuously at regular intervals. The main message 
-they emit is a `PositionReport` which contains information as to latitude and longitude, current 
-heading and speed. This message is usually fairly frequent. The other message of interest to us 
-is the `ShipStaticData` which has details of the ship itself such as name, size, draught, type and 
-IMO number (International Maritime Organization number). This message is broadcast much less 
-frequently, but the data is extremely useful to identify the type of vessel and its current 
-loading state (draught).
+Ships broadcast data in the form of messages continuously at regular intervals. The main 
+message they emit is a `PositionReport` which contains information as to latitude and longitude, 
+current heading and speed. This message is usually fairly frequent. The other message of
+interest to us is the `ShipStaticData` which has details of the ship itself such as name, 
+size, draught, type and IMO number (International Maritime Organization number). This message 
+is broadcast much less frequently, but the data is extremely useful to identify the type of 
+vessel and its current loading state (draught).
 
 The `shipping_collector` listens for both types of message and will gradually populate your
 database `ships` table with them. It does this by slicing the globe up into 10 segments by
@@ -242,12 +221,12 @@ if you left that list empty).
 
 One useful command for shipping is:
 
-    make status
+    ./worldmap.sh status
 
 That will print out some status info about ships in each region, ship totals and also lightning
 strikes per region.
 
-### The Map Builder
+### Map Overlays and Markers
 Apart from shipping there are, of course, other elements to the map display. 
 The full list is:
 
@@ -265,24 +244,25 @@ The full list is:
 * Volcanoes
 * Shipping
 
-Each of these has its own section in the `worldmap.conf` file and in the above UI.
+Each of these has its own configuration options.
+
 Hopefully the settings in each section are fairly self-explanatory. The one which
-is common to all is of course the `enabled` flag which will turn the display of
+is common to all is of course the `Enabled` flag which will turn the display of
 each on or off.
 
 In the web UI, the `Show` tab controls what gets shown on the map. If something is
 disabled, then the following tabs will have that section hidden, to avoid cluttering
 the interface.
 
-These elements are also updated according to a frequency determined by a `runs_per_day` 
+These elements are also updated according to a frequency determined by a `Runs per day` 
 setting. This is to restrict load on the remote servers, which only update their
 data every few hours at most anyway.
 
 You can, however, force the system to refresh the map using the following:
 
-    make refresh-map
+    ./worldmap.sh refresh-map
 
-Though it should be noted that this will not recessarily result in data being refreshed
+Though it should be noted that this will not necessarily result in data being refreshed
 from the upstream source. Where possible the system will do a HEAD request to find out
 if the remote data is newer than what we already have locally. If it isn't then we
 will just refresh the map using the locally cached data.
@@ -292,10 +272,15 @@ for some reason you want to refresh the regional maps then `sudo rm data/regions
 
 ### Some further notes
 Volcanoes are pretty much static day-to-day and can end up just cluttering up the map, 
-so I generally don't display them) you can disable them by setting `enabled = False`.
+so I generally don't display them. There are also a lot of them, depending on which
+options you set in the configuration. One useful option for these is the option
+`Specific volcano by name` if a particular volcano on the planet has a big eruption
+and you want to display it. That field can take a comma-separated list too, if you
+have several you want to display.
 
-Storms will drop off the map when the `expiry_days` (see worldmap.conf [storm_markers] 
-section) is exceeded.
+Storms will drop off the map when the `Expiry days` is exceeded. Quite often the NOAA
+site will simply stop updating a storm if it loses strength and becomes a tropical low
+or similar. This expiry stops it hanging around too long once the updates stop.
 
 If you select `Disc` ship icons there are basically two variants: Cargo (has a 'C' in
 the middle) and Tankers ('T' in the middle). They each have their own default colours,
@@ -316,16 +301,13 @@ detail you want.
 The whole idea of this is to have a live desktop background. To update your wallpaper 
 (fingers crossed!) execute the following command:
 
-    make start-desktop
+    ./worldmap.sh start-map
 
 This kicks off a script which runs in the background, so to stop it:
 
-    make stop-desktop
+    ./worldmap.sh stop-map
 
-If you want to run it in foreground you can use:
-
-    make start-desktop-fg
-
-Also have a look at `wallpaper-update-daemon.py` for details. It works for my distro, but
-since I can't test yours, it might not. Feel free to update the code and give the
-repo a pull request!
+### Developer's corner
+If you are a developer feel free to have a look at `wallpaper-update-daemon.py` for
+more details. It works for my distro, but since I can't test yours, it might not. Feel
+free to clone the repo, update the code and give us a pull request!
