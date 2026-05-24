@@ -10,9 +10,12 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 MAP_SERVICE=map_builder
+SHIPPING_SERVICE=shipping_collector
+WEATHER_SERVICE=weather_scanner
 DB_SERVICE=worldmap_db
 DB_USER=wmap
 DB_NAME=worldmap
+DUMP_FILE=worldmap_dump.sql
 
 echo -e "${BLUE}=== WorldMap ===${NC}"
 
@@ -48,6 +51,29 @@ case "$1" in
       ;;
     db)
       docker compose exec ${DB_SERVICE} psql -U ${DB_USER} ${DB_NAME}
+      ;;
+    backup)
+      echo "Ensuring worldmap database is running"
+      docker compose up ${DB_SERVICE} -d
+      echo "Creating compressed database backup to ${DUMP_FILE}..."
+      docker compose exec ${DB_SERVICE} pg_dump -U ${DB_USER} -Fc ${DB_NAME} > ${DUMP_FILE}
+      echo "Backup complete"
+      ;;
+    restore)
+      echo "WARNING: This will DELETE and RECREATE the ${DB_NAME} database from ${DUMP_FILE}."
+      if [ ! -f ${DUMP_FILE} ]; then echo "Error: ${DUMP_FILE} not found."; exit 1; fi
+      read -p "Are you sure you want to do that? [y/N] " confirm
+      if [[ $confirm == [yY] ]]; then
+         echo "Stopping non-database services"; \
+         docker compose stop ${SHIPPING_SERVICE} ${WEATHER_SERVICE} ${MAP_SERVICE}; \
+         echo "Ensuring worldmap database is running"; \
+         docker compose up ${DB_SERVICE} -d; \
+         echo "Restoring database..."; \
+         cat ${DUMP_FILE} | docker compose exec -T ${DB_SERVICE} pg_restore -U ${DB_USER} -d postgres --clean --create --if-exists; \
+         echo "Restore complete"; \
+         echo "Stopping worldmap database"; \
+         docker compose stop ${DB_SERVICE}; \
+      fi
       ;;
     status)
       echo "--- Ships Located in Each Region ---"
@@ -111,6 +137,8 @@ case "$1" in
       echo "  logs            Follow logs from all containers"
       echo "  status          Show some database statistics statistics"
       echo "  db              Open a PostgreSQL shell for the database"
+      echo "  backup          Backup worldmap db to 'worldmap_dump.sql'"
+      echo "  restore         Restore worldmap db from 'worldmap_dump.sql'"
       echo "  refresh-map     Force a map refresh via signal"
       echo "  map-start       Start the wallpaper daemon"
       echo "  map-stop        Stop the wallpaper daemon"
