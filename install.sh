@@ -24,8 +24,7 @@ cd "$INSTALL_DIR"
 
 # Download the production docker-compose file
 echo "Downloading configuration..."
-curl -fsSL https://raw.githubusercontent.com/paulwaite87/worldmap/master/docker-compose.prod.yml -o docker-compose.yml
-
+curl -fsSL https://raw.githubusercontent.com/paulwaite87/worldmap/refs/heads/master/docker-compose-prod.yml
 # Start the system
 echo -e "${BLUE}Starting World Map containers...${NC}"
 docker compose -f docker-compose.yml up -d
