@@ -69,8 +69,14 @@
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label small text-white-50 fw-bold mb-1">Extra markers</label>
-                                    <input type="text" class="form-control bg-dark text-light border-secondary" id="xplanet__marker_files" placeholder="e.g. custom_cities.txt, overlays.txt">
+                                    <label class="form-label small text-white-50 fw-bold mb-1">Log level</label>
+                                    <select class="form-select bg-dark text-light border-secondary" id="common__log_level">
+                                        <option value="DEBUG">DEBUG</option>
+                                        <option value="INFO">INFO</option>
+                                        <option value="WARNING">WARNING</option>
+                                        <option value="ERROR">ERROR</option>
+                                        <option value="CRITICAL">CRITICAL</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -297,8 +303,8 @@
             if(data['common__desktop_geometry'] !== undefined) document.getElementById('common__desktop_geometry').value = data['common__desktop_geometry'];
             if(data['common__target_geometry'] !== undefined) document.getElementById('common__target_geometry').value = data['common__target_geometry'];
 
-            // Bind the xplanet marker files input field on page load
-            if(data['xplanet__marker_files'] !== undefined) document.getElementById('xplanet__marker_files').value = data['xplanet__marker_files'];
+            // Bind the common log_level input field on page load
+            if(data['common__log_level'] !== undefined) document.getElementById('common__log_level').value = data['common__log_level'];
 
             // Bind Master Toggle Switches on 'Show' tab and attach logic updates
             ['clouds', 'isobars', 'wind', 'precipitation', 'lightning', 'storms', 'quakes', 'volcanoes', 'satellites', 'shipping'].forEach(layer => {
@@ -808,7 +814,7 @@
             payload['common__region'] = document.getElementById('common__region').value;
             payload['common__desktop_geometry'] = document.getElementById('common__desktop_geometry').value;
             payload['common__target_geometry'] = document.getElementById('common__target_geometry').value;
-            payload['xplanet__marker_files'] = document.getElementById('xplanet__marker_files').value;
+            payload['common__log_level'] = document.getElementById('common__log_level').value;
 
             // Map Standard Toggles
             ['clouds', 'isobars', 'wind', 'precipitation', 'lightning', 'storms', 'quakes', 'volcanoes', 'satellites', 'shipping', 'shipping_collector', 'weather_scanner'].forEach(layer => {
