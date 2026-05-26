@@ -118,9 +118,10 @@ class XPlanetRenderer(Updater):
             if self.config.section_enabled("volcanoes"):
                 f.write(f'marker_file={self.config.get_section_outfile("volcanoes")}\n')
 
-            # Show satellites
+            # Show satellites - these are always in the 'satellites' folder
+            # and the filename is always 'sat_file'.
             if self.config.section_enabled("satellites"):
-                f.write(f'satellite_file={self.config.get_section_outfile("satellites")}\n')
+                f.write(f'satellite_file=sat_file\n')
 
             # Show shipping activity
             if self.config.section_enabled("shipping"):

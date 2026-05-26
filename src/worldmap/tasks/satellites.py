@@ -2,6 +2,8 @@
 import logging
 import requests
 import os
+import time
+import math
 
 # Internal library import
 from worldmap.lib.config import WorldMapConfig
@@ -13,14 +15,21 @@ logger = logging.getLogger(__name__)
 class SatelliteUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Satellites", map_data)
-        self.set_output_path()
+        # Deal with xplanet hard-wiring of satellite file location
+        self.outfile = "sat_file"
+        self.output_path = os.path.join(self.workdir, "satellites", self.outfile)
+        os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
 
     def run(self):
-        """Fetches CelesTrak TLE data and formats it for XPlanet."""
-        self.exit_if_disabled()
+        """Fetches CelesTrak TLE data with localized 24-hour group file caching."""
+        #self.exit_if_disabled()
+        if self.settings.getboolean("enabled", fallback=False) is False:
+            return
 
         base_url = self.get_base_url()
         target_names = listify(self.settings.get("sat_names", fallback=""))
+        trail_minutes = self.settings.getint("trail_minutes", fallback=5)
+        degrees_above_horizon = self.settings.getint("degrees_above_horizon", fallback=45)
 
         if not target_names:
             logger.debug("No satellites configured in names list. Skipping.")
@@ -28,65 +37,127 @@ class SatelliteUpdater(Updater):
 
         logger.debug(f"Satellites to track: {target_names}")
 
-        # We will fetch the raw text endpoints from CelesTrak for our target groups
-        groups = ["stations", "weather"]
+        groups = ["stations", "weather", "science", "resource"]
         all_tle_lines = []
-        network_failure = False
 
-        # Fetch all data
+        # Ensure the data caching directory exists
+        data_dir = os.path.dirname(self.output_path) or "data"
+        os.makedirs(data_dir, exist_ok=True)
+
+        # Process each group using local cache rules to avoid remote "Forbidden" rate-limiting
         for group in groups:
-            # Construct the proper query structure: gp.php?GROUP=xyz&FORMAT=tle
-            query_url = f"{base_url}/gp.php?GROUP={group}&FORMAT=tle"
+            cache_file = os.path.join(data_dir, f"celestrak_{group}.txt")
+            should_download = True
+
+            # Check if cache exists and is fresh (less than 24 hours old)
+            if os.path.exists(cache_file):
+                file_age_seconds = time.time() - os.path.getmtime(cache_file)
+                if file_age_seconds < 86400:  # 24 hours in seconds
+                    logger.debug(
+                        f"Using fresh cached TLE data for group '{group}' ({int(file_age_seconds / 3600)}h old).")
+                    should_download = False
+
+            if should_download:
+                query_url = f"{base_url}/gp.php?GROUP={group}&FORMAT=tle"
+                try:
+                    logger.info(f"Cache expired or missing. Fetching satellite data from {query_url}...")
+                    r = requests.get(query_url, timeout=15)
+                    r.raise_for_status()
+
+                    # Save the raw group response payload to our local cache
+                    with open(cache_file, "w", encoding="utf-8") as f_cache:
+                        f_cache.write(r.text)
+
+                except Exception as e:
+                    logger.error(f"Failed to refresh satellite group '{group}': {e}")
+                    if not os.path.exists(cache_file):
+                        logger.error(f"No cached file available as fallback for group '{group}'. Skipping.")
+                        continue
+                    logger.warning(f"Falling back to stale cache for group '{group}'.")
+
+            # Load the data from the local cache file split into individual structural lines
             try:
-                logger.debug(f"Fetching satellite data from {query_url}...")
-                r = requests.get(query_url, timeout=15)
-                r.raise_for_status()
-                all_tle_lines.extend(r.text.splitlines())
-            except requests.RequestException as e:
-                logger.error(f"NETWORK ERROR: Failed to fetch {query_url}. API may be rate-limiting or offline. Details: {e}")
-                network_failure = True
+                with open(cache_file, "r", encoding="utf-8") as f_cache:
+                    all_tle_lines.extend(f_cache.readlines())
+            except OSError as e:
+                logger.error(f"Failed to read cache file {cache_file}: {e}")
 
         if not all_tle_lines:
-            if network_failure:
-                logger.error(f"CRITICAL: Satellite API fetch failed completely. '{self.output_path}' remains truncated. Satellites will be hidden until the connection recovers.")
-            else:
-                logger.warning(f"No satellite data retrieved from API. '{self.output_path}' remains truncated.")
+            logger.error("No TLE data available from remote or local cache. Skipping parsing step.")
             return
 
-        # Filter and write in XPlanet 3-line format
-        found_sats = 0
+        # Parse TLE records and construct both the unified XPlanet marker format
+        # and the raw TLE data file expected by the XPlanet engine.
         try:
-            logger.debug(f"Pre-run size of {self.output_path}: {os.path.getsize(self.output_path)}")
-            with open(self.output_path, "w") as f:
-                # TLEs are 3 lines: Name, Line 1, Line 2
-                for i in range(0, len(all_tle_lines), 3):
-                    # Prevent index out of bounds on malformed files
+            found_sats = 0
+
+            # Define both output paths. self.output_path is configured as 'satellites/sat_file'
+            marker_file = self.output_path
+            tle_file = f"{self.output_path}.tle"
+
+            # Open both files simultaneously using a clean context manager
+            with open(marker_file, "w") as f_marker, open(tle_file, "w") as f_tle:
+                for i in range(len(all_tle_lines)):
+                    # Step by 3 lines for standard TLE formats (Title, Line 1, Line 2)
+                    if i % 3 != 0:
+                        continue
+
+                    # Prevent index out of bounds on malformed or trailing empty lines
                     if i + 2 >= len(all_tle_lines):
                         break
 
-                    # CelesTrak pads names with spaces, so we must strip it
                     name_line = all_tle_lines[i].strip()
                     line1 = all_tle_lines[i + 1].strip()
                     line2 = all_tle_lines[i + 2].strip()
 
                     # Our list of names can be a substring of the acquired name
                     if any(name in name_line for name in target_names):
-                        # Append the XPlanet formatting flags to the title line
-                        xplanet_name_line = f"0 {name_line} [color=White,trail=max,trail_color=Cyan]"
 
-                        f.write(f"{xplanet_name_line}\n")
-                        f.write(f"{line1}\n")
-                        f.write(f"{line2}\n")
+                        # Extract the actual NORAD catalog ID from TLE Line 2
+                        sat_id = line2.split()[1]
+
+                        # --- NEW: Calculate Altitude ---
+                        try:
+                            # Mean motion is characters 52-63 on Line 2
+                            mean_motion = float(line2[52:63].strip())
+
+                            # Convert revolutions per day to radians per second
+                            n = (mean_motion * 2 * math.pi) / 86400.0
+
+                            # Kepler's Third Law to find orbital radius in meters (Earth's mu = 3.986e14)
+                            mu = 3.986004418e14
+                            a_meters = (mu / (n ** 2)) ** (1 / 3)
+
+                            # Convert to km and subtract Earth's mean radius (6371 km)
+                            altitude = int((a_meters / 1000.0) - 6371.0)
+
+                            # Append to the display name
+                            display_name = f"{name_line} [{altitude} km]"
+                        except (ValueError, ZeroDivisionError):
+                            # Fallback if the TLE is malformed
+                            display_name = name_line
+
+                        # --- 1. Write visual styling to the marker file ---
+                        f_marker.write(f'{sat_id} "{display_name}" color=White\n')
+                        f_marker.write(f'{sat_id} "" image=none altcirc={degrees_above_horizon} trail={{orbit,-{trail_minutes},0,1}} color=Yellow\n')
+                        f_marker.write(f'{sat_id} "" image=none trail={{orbit,{trail_minutes},0,1}} color=Red\n')
+
+                        # --- 2. Write raw orbital math to the .tle file ---
+                        f_tle.write(f"{name_line}\n")
+                        f_tle.write(f"{line1}\n")
+                        f_tle.write(f"{line2}\n")
+
                         found_sats += 1
 
             logger.info(f"Satellite update complete. Tracked {found_sats}/{len(target_names)} objects.")
 
-            # Warn if we didn't find everything we asked for
             if found_sats < len(target_names):
                 missing = len(target_names) - found_sats
-                logger.warning(f"Could not find TLE data for {missing} configured satellite(s). Check spelling in config.")
+                logger.warning(
+                    f"Could not find TLE data for {missing} configured satellite(s). Check spelling in config.")
 
-            logger.debug(f"Post-run size of {self.output_path}: {os.path.getsize(self.output_path)}")
+            logger.debug(
+                f"Post-run marker size: {os.path.getsize(marker_file)}, TLE size: {os.path.getsize(tle_file)}")
 
         except OSError as e:
-            logger.error(f"Failed to write satellite marker file: {e}")
+            logger.error(f"Failed to write satellite marker and TLE files: {e}")

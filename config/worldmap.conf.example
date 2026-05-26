@@ -259,6 +259,23 @@ vei_min = 5
 erupt_date_codes = D1
 runs_per_day = 1
 
+[satellites]
+enabled = False
+url = https://celestrak.org/NORAD/elements
+# Picked from a fixed list of 15 popular orbiting objects
+# (see the web-based configurator)
+sat_names = ISS (ZARYA), CSS (TIANHE)
+# Update frequency can be high to track fast-moving satellites
+# This is the number of minutes between updates; the UI will
+# allow 1 thru 120 minutes
+update_minutes = 10
+# Minutes before and after current position to represent as a
+# trail across the map. Shows where it was, and where it will be
+trail_minutes = 45
+# Show a circle within which the satellite is this many degrees
+# above the horizon to observers on the ground
+degrees_above_horizon = 45
+
 [shipping]
 enabled = False
 outfile = data/ship_markers.txt

@@ -73,10 +73,16 @@ class WorldMapConfig:
         if not os.path.exists(self.config_path):
             logger.error(f"Config file not found: {self.config_path}")
             return
+
         self.config.clear()
         self.config.read(self.config_path)
+
+        # Read secrets and insert them into the config
         self._inject_secrets()
+
+        # Monitor change status
         self.has_changed = self.check_if_changed()
+
         # Adjust log level for common (overall) logging
         log_level = self.get_setting("common", "log_level", None)
         if log_level:

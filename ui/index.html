@@ -513,6 +513,36 @@
                                 <input type="range" class="form-range" id="${item.flatKey}" min="0" max="10" step="0.1" value="${initialMag}"
                                        oninput="document.getElementById('badge-${item.flatKey}').innerText = 'M ' + parseFloat(this.value).toFixed(1)">
                             `;
+                        } else if (item.option.includes('update_minutes')) {
+                            const initialMinutes = parseInt(item.value) || 10;
+                            col.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small text-white-50 fw-bold mb-0">${customLabelText}</label>
+                                    <span class="badge bg-success text-dark fw-bold" id="badge-${item.flatKey}">${initialMinutes}mins</span>
+                                </div>
+                                <input type="range" class="form-range" id="${item.flatKey}" min="5" max="60" step="5" value="${initialMinutes}"
+                                       oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + 'mins'">
+                            `;
+                        } else if (item.option.includes('degrees_above_horizon')) {
+                            const initialDegrees = parseInt(item.value) || 45;
+                            col.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small text-white-50 fw-bold mb-0">${customLabelText}</label>
+                                    <span class="badge bg-success text-dark fw-bold" id="badge-${item.flatKey}">${initialDegrees}deg</span>
+                                </div>
+                                <input type="range" class="form-range" id="${item.flatKey}" min="10" max="60" step="5" value="${initialDegrees}"
+                                       oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + 'deg'">
+                            `;
+                        } else if (item.option.includes('trail_minutes')) {
+                            const initialTrail = parseInt(item.value) || 45;
+                            col.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small text-white-50 fw-bold mb-0">${customLabelText}</label>
+                                    <span class="badge bg-success text-dark fw-bold" id="badge-${item.flatKey}">${initialTrail}mins</span>
+                                </div>
+                                <input type="range" class="form-range" id="${item.flatKey}" min="5" max="60" step="5" value="${initialTrail}"
+                                       oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + 'mins'">
+                            `;
                         } else if (item.option.includes('fontsize')) {
                             const initialSize = parseInt(item.value) || 12;
                             col.innerHTML = `
@@ -551,7 +581,7 @@
                                     <span class="badge bg-info text-dark fw-bold" id="badge-${item.flatKey}">${initialVal} runs</span>
                                 </div>
                                 <input type="range" class="form-range" id="${item.flatKey}" min="1" max="24" step="1" value="${initialVal}"
-                                       oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + ' runs'">
+                                       oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + ' runsruns'">
                             `;
                         } else if (item.option.includes('log_level')) {
                             col.innerHTML = `
@@ -683,14 +713,19 @@
                                 <select class="form-select bg-dark text-light border-secondary filter-comma-separated" id="${item.flatKey}" multiple style="height: 220px;">
                                     <option value="ISS \(ZARYA\)" ${activeNames.includes('ISS (ZARYA)') ? 'selected' : ''}>ISS (ZARYA) - International Space Station</option>
                                     <option value="CSS \(TIANHE\)" ${activeNames.includes('CSS (TIANHE)') ? 'selected' : ''}>CSS (TIANHE)  - Chinese Space Station</option>
-                                    <option value="HST" ${activeNames.includes('HST') ? 'selected' : ''}>HST - Hubble Space Telescope</option>
-                                    <option value="NOAA 15" ${activeNames.includes('NOAA 15') ? 'selected' : ''}>NOAA 15 - Sun-synchronous weather</option>
+                                    <option value="HST" ${activeNames.includes('HST') ? 'selected' : ''}>SWIFT - The Neil Gehrels Swift Observatory</option>
+                                    <option value="FGRST (GLAST)" ${activeNames.includes('FGRST (GLAST)') ? 'selected' : ''}>FGRST (GLAST) - The Fermi Gamma-ray Space Telescope, hunting for black holes and pulsars</option>
+                                    <option value="SWIFT" ${activeNames.includes('SWIFT') ? 'selected' : ''}>HST - Hubble Space Telescope</option>
+                                    <option value="NOAA 15" ${activeNames.includes('NOAA 15') ? 'selected' : ''}>NOAA 15 - The Polar orbiting weather fleet (15-21)</option>
                                     <option value="NOAA 15" ${activeNames.includes('NOAA 15') ? 'selected' : ''}>NOAA 18</option>
                                     <option value="NOAA 19" ${activeNames.includes('NOAA 19') ? 'selected' : ''}>NOAA 19</option>
                                     <option value="NOAA 20" ${activeNames.includes('NOAA 19') ? 'selected' : ''}>NOAA 20</option>
                                     <option value="NOAA 21" ${activeNames.includes('NOAA 19') ? 'selected' : ''}>NOAA 21</option>
-                                    <option value="AQUA" ${activeNames.includes('AQUA') ? 'selected' : ''}>AQUA - NASA Earth observation</option>
-                                    <option value="TERRA"  ${activeNames.includes('TERRA') ? 'selected' : ''}>TERRA</option>
+                                    <option value="AQUA" ${activeNames.includes('AQUA') ? 'selected' : ''}>AQUA - NASA flagship water-cycle observer.</option>
+                                    <option value="TERRA"  ${activeNames.includes('TERRA') ? 'selected' : ''}>TERRA - Twin to Aqua, tasked with mapping land mass and vegetation</option>
+                                    <option value="LANDSAT 8"  ${activeNames.includes('LANDSAT 8') ? 'selected' : ''}>LANDSAT 8 - Legendary optical and thermal Earth-imaging satellite</option>
+                                    <option value="LANDSAT 9"  ${activeNames.includes('LANDSAT 9') ? 'selected' : ''}>LANDSAT 9 - The newest Landsat satellite</option>
+                                    <option value="SENTINEL-1A"  ${activeNames.includes('SENTINEL-1A') ? 'selected' : ''}>SENTINEL-1A - European Space Agency primary radar imaging satellite</option>
                                     <option value="GOES 16"  ${activeNames.includes('GOES 16') ? 'selected' : ''}>GOES 16 - Geostationary (Americas/Atlantic)</option>
                                     <option value="GOES 18"  ${activeNames.includes('GOES 18') ? 'selected' : ''}>GOES 18 - Geostationary (Pacific/Americas)</option>
                                     <option value="METEOSAT-9"  ${activeNames.includes('METEOSAT-9') ? 'selected' : ''}>METEOSAT-9 - Geostationary (Indian Ocean)</option>

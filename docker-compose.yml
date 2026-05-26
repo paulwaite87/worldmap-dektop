@@ -89,6 +89,7 @@ services:
         condition: service_healthy
     volumes:
       - ./data:/opt/project/data
+      - ./satellites:/opt/project/satellites
       - ./config:/opt/project/config
       - .:/opt/project
     networks:
