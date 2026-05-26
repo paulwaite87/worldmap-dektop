@@ -22,7 +22,6 @@ class SatelliteUpdater(Updater):
 
     def run(self):
         """Fetches CelesTrak TLE data with localized 24-hour group file caching."""
-        #self.exit_if_disabled()
         if self.settings.getboolean("enabled", fallback=False) is False:
             return
 
@@ -46,7 +45,7 @@ class SatelliteUpdater(Updater):
         data_dir = os.path.dirname(self.output_path) or "data"
         os.makedirs(data_dir, exist_ok=True)
 
-        # Process each group using local cache rules to avoid remote "Forbidden" rate-limiting
+        # Process each group using local cache rules
         for group in groups:
             cache_file = os.path.join(data_dir, f"celestrak_{group}.txt")
             should_download = True
@@ -55,8 +54,7 @@ class SatelliteUpdater(Updater):
             if os.path.exists(cache_file):
                 file_age_seconds = time.time() - os.path.getmtime(cache_file)
                 if file_age_seconds < 86400:  # 24 hours in seconds
-                    logger.debug(
-                        f"Using fresh cached TLE data for group '{group}' ({int(file_age_seconds / 3600)}h old).")
+                    logger.debug(f"Using fresh cached TLE data for '{group}' ({int(file_age_seconds / 3600)}h old).")
                     should_download = False
 
             if should_download:
@@ -77,7 +75,7 @@ class SatelliteUpdater(Updater):
                         continue
                     logger.warning(f"Falling back to stale cache for group '{group}'.")
 
-            # Load the data from the local cache file split into individual structural lines
+            # Load the data from the local cache
             try:
                 with open(cache_file, "r", encoding="utf-8") as f_cache:
                     all_tle_lines.extend(f_cache.readlines())
@@ -85,11 +83,10 @@ class SatelliteUpdater(Updater):
                 logger.error(f"Failed to read cache file {cache_file}: {e}")
 
         if not all_tle_lines:
-            logger.error("No TLE data available from remote or local cache. Skipping parsing step.")
+            logger.error("No TLE data available. Skipping.")
             return
 
-        # Parse TLE records and construct both the unified XPlanet marker format
-        # and the raw TLE data file expected by the XPlanet engine.
+        # Parse TLE records and build output files
         try:
             found_sats = 0
 
@@ -97,51 +94,35 @@ class SatelliteUpdater(Updater):
             marker_file = self.output_path
             tle_file = f"{self.output_path}.tle"
 
-            # Open both files simultaneously using a clean context manager
             with open(marker_file, "w") as f_marker, open(tle_file, "w") as f_tle:
-                for i in range(len(all_tle_lines)):
-                    # Step by 3 lines for standard TLE formats (Title, Line 1, Line 2)
-                    if i % 3 != 0:
-                        continue
-
-                    # Prevent index out of bounds on malformed or trailing empty lines
-                    if i + 2 >= len(all_tle_lines):
-                        break
-
+                # Iterate by 3-line blocks
+                for i in range(0, len(all_tle_lines) - 2, 3):
                     name_line = all_tle_lines[i].strip()
                     line1 = all_tle_lines[i + 1].strip()
                     line2 = all_tle_lines[i + 2].strip()
 
-                    # Our list of names can be a substring of the acquired name
-                    if any(name in name_line for name in target_names):
+                    # Ensure case-insensitive, whitespace-agnostic matching
+                    if any(name.strip().upper() in name_line.upper() for name in target_names):
 
-                        # Extract the actual NORAD catalog ID from TLE Line 2
-                        sat_id = line2.split()[1]
-
-                        # --- NEW: Calculate Altitude ---
+                        # Extract NORAD ID from line 2 (cols 2-7)
                         try:
-                            # Mean motion is characters 52-63 on Line 2
+                            sat_id = line2[2:7].strip()
+
+                            # Altitude Math: Mean Motion is cols 52-63 on Line 2
                             mean_motion = float(line2[52:63].strip())
-
-                            # Convert revolutions per day to radians per second
                             n = (mean_motion * 2 * math.pi) / 86400.0
-
-                            # Kepler's Third Law to find orbital radius in meters (Earth's mu = 3.986e14)
                             mu = 3.986004418e14
                             a_meters = (mu / (n ** 2)) ** (1 / 3)
-
-                            # Convert to km and subtract Earth's mean radius (6371 km)
                             altitude = int((a_meters / 1000.0) - 6371.0)
-
-                            # Append to the display name
                             display_name = f"{name_line} [{altitude} km]"
-                        except (ValueError, ZeroDivisionError):
-                            # Fallback if the TLE is malformed
+                        except (ValueError, IndexError):
+                            sat_id = "00000"
                             display_name = name_line
 
-                        # --- 1. Write visual styling to the marker file ---
+                        # Write styling
                         f_marker.write(f'{sat_id} "{display_name}" color={marker_color} fontsize={marker_fontsize}\n')
-                        f_marker.write(f'{sat_id} "" image=none altcirc={degrees_above_horizon} trail={{orbit,-{trail_minutes},0,1}} color=Yellow\n')
+                        f_marker.write(
+                            f'{sat_id} "" image=none altcirc={degrees_above_horizon} trail={{orbit,-{trail_minutes},0,1}} color=Yellow\n')
                         f_marker.write(f'{sat_id} "" image=none trail={{orbit,{trail_minutes},0,1}} color=Red\n')
 
                         # --- 2. Write raw orbital math to the .tle file ---
