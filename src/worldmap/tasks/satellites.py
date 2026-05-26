@@ -26,11 +26,12 @@ class SatelliteUpdater(Updater):
             return
 
         base_url = self.get_base_url()
-        target_names = listify(self.settings.get("sat_names", fallback=""))
         marker_color = self.settings.get("marker_color", fallback="White")
         marker_fontsize = self.settings.getint("marker_fontsize", fallback=10)
         trail_minutes = self.settings.getint("trail_minutes", fallback=5)
         degrees_above_horizon = self.settings.getint("degrees_above_horizon", fallback=45)
+        target_names = listify(self.settings.get("sat_names", fallback=""))
+        target_names += listify(self.settings.get("extra_satellite_names", fallback=''))
 
         if not target_names:
             logger.debug("No satellites configured in names list. Skipping.")

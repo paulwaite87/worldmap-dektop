@@ -278,6 +278,11 @@ trail_minutes = 45
 # Show a circle within which the satellite is this many degrees
 # above the horizon to observers on the ground
 degrees_above_horizon = 45
+# A comma-separated list of satellite names to track. These must
+# exist in one of these Celestrak groups: resource, science,
+# stations, or weather. Browse here to see what's in each group:
+# https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle
+extra_satellite_names =
 
 [shipping]
 enabled = False

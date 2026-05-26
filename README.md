@@ -244,6 +244,7 @@ The full list is:
 * Earthquakes
 * Volcanoes
 * Shipping
+* Satellites
 
 Each of these has its own configuration options.
 
@@ -272,6 +273,8 @@ If you really want a fresh start, then `sudo rm data/*` should do the trick! And
 for some reason you want to refresh the regional maps then `sudo rm data/regions/*`.
 
 ### Some further notes
+
+#### Volcanoes
 Volcanoes are pretty much static day-to-day and can end up just cluttering up the map, 
 so I generally don't display them. There are also a lot of them, depending on which
 options you set in the configuration. One useful option for these is the option
@@ -279,10 +282,12 @@ options you set in the configuration. One useful option for these is the option
 and you want to display it. That field can take a comma-separated list too, if you
 have several you want to display.
 
+#### Storms
 Storms will drop off the map when the `Expiry days` is exceeded. Quite often the NOAA
 site will simply stop updating a storm if it loses strength and becomes a tropical low
 or similar. This expiry stops it hanging around too long once the updates stop.
 
+#### Shipping
 If you select `Disc` ship icons there are basically two variants: Cargo (has a 'C' in
 the middle) and Tankers ('T' in the middle). They each have their own default colours,
 but these can also vary if the system detects their draught (loading) has decreased.
@@ -297,6 +302,19 @@ icons overlaying each other in port locations making a mess on the map.
 
 There are also other filters in that section, so play around until you get the level of
 detail you want.
+
+#### Satellites
+Plotting satellite paths is something XPlanet is famous for, and you can do that in this
+package as well. Of course there are literally thousands of objects up there whizzing around
+and about the Planet, not to mention the mega-clusters like Starlink etc. so I've just
+populated a multi-select with a handful of the most popular ones you can display.
+
+There is also a text box for you to add a comma-separated list of satellite names to cater
+for a few you want which aren't in my list. Just be aware any you add have to come from
+the groups I currently download from Celestrak: `resource`, `science`, `stations`, and 
+`weather`. You can see what's in those by browsing to the following URL, replacing `{group}`
+with one of those 4 group names:
+    https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle
 
 ### Wallpaper updates
 The whole idea of this is to have a live desktop background. To update your wallpaper 
