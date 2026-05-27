@@ -112,15 +112,15 @@ class ShippingUpdater(Updater):
                 if raw_lat is None or raw_lon is None:
                     continue
 
-                # Default colour
-                marker_colour = ""
+                # Default color
+                marker_color = ""
 
                 # --- Coordinate Normalization ---
                 ship_latitude = raw_lat
                 ship_longitude = raw_lon
 
                 # Formatting and Marker Writing
-                ship_colour = ship.get_vessel_colour()
+                ship_color = ship.get_vessel_color()
 
                 if ship.vessel_class in show_names_classes:
                     fontsize = int(base_label_fontsize)
@@ -135,7 +135,7 @@ class ShippingUpdater(Updater):
 
                     ship_label = f"{ship.get_vessel_description()}"
                     fontsize = f" fontsize={fontsize}"
-                    marker_colour = f" color={ship_colour}"
+                    marker_color = f" color={ship_color}"
                 else:
                     ship_label = fontsize = ""
 
@@ -149,10 +149,10 @@ class ShippingUpdater(Updater):
                     marker_image = f" image={ship.get_vessel_disc_icon()}"
                 else:
                     marker_image = ""
-                    marker_colour = f" color={ship_colour}"
+                    marker_color = f" color={ship_color}"
 
                 # --- Write the Primary Ship Marker ---
-                f.write(f'{ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_colour}{marker_image}\n')
+                f.write(f'{ship_latitude} {ship_longitude} "{ship_label}"{fontsize}{marker_color}{marker_image}\n')
                 written_count += 1
 
                 # --- Track Normalization ---

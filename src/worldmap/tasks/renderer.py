@@ -17,10 +17,10 @@ class XPlanetRenderer(Updater):
         super().__init__(config, "XPlanet", map_data)
         self.downloader = NASAGIBSDownloader()
 
-        # This is the default colour Xplanet will use when it has no map image
+        # This is the default color Xplanet will use when it has no map image
         # Used when we specify a bbox extending beyond 180 longitude, and
         # avoids the default white being used.
-        self.default_fill_colour = self.settings.get("default_fill_colour", fallback="black")
+        self.fill_default_color = self.common.get("fill_default_color", fallback="black")
 
         # Ensure regional data directory exists for caching
         self.region_dir = os.path.join(self.workdir, "data", "regions")
@@ -91,7 +91,7 @@ class XPlanetRenderer(Updater):
         with open(temp_conf_path, "w") as f:
             f.write("[earth]\n")
             f.write('"Earth"\n')
-            f.write(f'color={self.default_fill_colour}\n')
+            f.write(f'color={self.fill_default_color}\n')
             f.write(f"map={day_map}\n")
             f.write(f"night_map={night_map}\n")
             # Xplanet mapbounds={NorthWest_Lat, NorthWest_Lon, SouthEast_Lat, SouthEast_Lon}
@@ -133,13 +133,16 @@ class XPlanetRenderer(Updater):
             f.write(f"marker_file={base_markers}.txt\n")
 
             # Additional marker files from a list in the config
-            marker_files = listify(self.settings.get("marker_files", fallback=''))
-            for marker_file in marker_files:
+            extra_marker_files = listify(self.common.get("extra_marker_files", fallback=''))
+            for marker_file in extra_marker_files:
                 f.write(f"marker_file={marker_file}\n")
 
             # Default style for markers if not specified
-            f.write(f'marker_color={self.settings.get("marker_default_colour", "cyan")}\n')
-            f.write(f'marker_fontsize={self.settings.getint("marker_default_fontsize", 12)}\n')
+            marker_color = self.common.get("marker_default_color", "cyan")
+            if marker_color.startswith('#'):
+                marker_color = f"0x{marker_color[1:]}"
+            f.write(f'marker_color={marker_color}\n')
+            f.write(f'marker_fontsize={self.common.getint("marker_default_fontsize", 12)}\n')
 
         # Cleanup old map files
         search_pattern = os.path.join(data_dir, f"*-{base_name}")

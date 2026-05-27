@@ -36,7 +36,7 @@ def test_xplanet_renderer_pipeline(test_env):
     # Enable markers
     test_env["config"].update_setting("lightning", "enabled", "True")
     test_env["config"].update_setting("lightning", "outfile", "/dummy/lightning.txt")
-    test_env["config"].update_setting("xplanet", "marker_files", "dummy1.txt, dummy2.txt")
+    test_env["config"].update_setting("common", "extra_marker_files", "dummy1.txt, dummy2.txt")
     test_env["config"].update_setting("xplanet", "base_filename", "testmap.jpg")
 
     # 2. Patch External Dependencies

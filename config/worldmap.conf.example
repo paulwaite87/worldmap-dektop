@@ -28,6 +28,18 @@ desktop_geometry = 1920x1200
 # result in sharper maps, clouds etc.
 #target_geometry = 2048x1024
 target_geometry = 4096x2048
+# This color is used when XPlanet can't fill an area with an image
+# such as when a bounding box extends beyond 180 longitude
+# #04040e is a deep blue to match NASA blue marble seas
+# NB: Specific both as hex, or Xplanet might not know the color
+fill_default_color = #04040e
+# This is the final map image we generate
+base_filename = regionmap.jpg
+marker_default_color = #ffffff
+marker_default_fontsize = 12
+# If you add your own marker files, then list the filenames here, as a
+# comma-separated list and put the files in the 'markers' folder
+extra_marker_files =
 # Working directory
 workdir = .
 # Level for logging: DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -47,6 +59,8 @@ threshold = 150
 # gamma: 0.1 - 2.0 (e.g., 0.5 makes clouds much more transparent)
 gamma = 0.4
 runs_per_day = 12
+# Any clouds image older then this will be refreshed
+expiry_hours = 3
 
 [isobars]
 # An excellent overall picture of what the air pressure map is in
@@ -90,8 +104,6 @@ min_mm_hr = 0.5
 alpha = 0.8
 # Options: standard, ocean_blue, or high_contrast
 palette = standard
-# GFS forecast hour (usually 3 or 6 for current conditions)
-forecast_hour = 3
 key_fontsize = 18
 # Options: top-left, top-right, bottom-left, bottom-right
 key_position = top-left
@@ -120,7 +132,7 @@ key_position = bottom-left
 runs_per_day = 2
 
 [currents]
-# Ocean currents colour-coded by speed
+# Ocean currents color-coded by speed
 enabled = False
 url = https://nomads.ncep.noaa.gov/pub/data/nccf/com/rtofs/prod/
 outfile = data/currents.png
@@ -292,7 +304,7 @@ label_fontsize = 12
 # Show ships on the map as icons, either 'Arrows' or 'Disc'. If
 # commented out (or set to something else, like 'default') then
 # the default circular markers will be used.
-# 'Arrows': Directional icon images. These are arrows colour-coded as:
+# 'Arrows': Directional icon images. These are arrows color-coded as:
 # red = Tankers, Green = Cargo, Purple = Passenger
 # 'Discs'. These are filled circular icons which may have a 'T' or 'C' inside.
 # 'C' - Cargo. Green = loaded; Red = unloaded since last info
@@ -360,17 +372,6 @@ log_level = INFO
 [xplanet]
 enabled = True
 projection = rectangular
-# Set to centre over your location in global/World view; if you select a
-# region instead this will be ignored, and the region centre will be used
-longitude = 174
-# This colour is used when XPlanet can't fill an area with an image
-# such as when a bounding box extends beyond 180 longitude
-# 0x04040e is a deep blue to match NASA blue marble seas
-default_fill_colour = 0x04040e
-# This is the final map image we generate
+# The base filename of the final map image. This will be prefixed
+# with a unix timestamp for each run
 base_filename = regionmap.jpg
-marker_default_colour = cyan
-marker_default_fontsize = 12
-# If you add your own marker files, then list the filenames here, as a
-# comma-separated list and put the files in the 'markers' folder
-marker_files =

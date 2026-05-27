@@ -289,10 +289,10 @@ or similar. This expiry stops it hanging around too long once the updates stop.
 
 #### Shipping
 If you select `Disc` ship icons there are basically two variants: Cargo (has a 'C' in
-the middle) and Tankers ('T' in the middle). They each have their own default colours,
+the middle) and Tankers ('T' in the middle). They each have their own default colors,
 but these can also vary if the system detects their draught (loading) has decreased.
 
-If you select `Arrows` for the ship icons then there is a colour code: red for tankers,
+If you select `Arrows` for the ship icons then there is a color code: red for tankers,
 green for cargo, violet for passenger/other. Also the arrows will point in the direction
 that the vessel is heading currently.
 

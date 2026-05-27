@@ -59,15 +59,34 @@ class PrecipitationUpdater(Updater):
         }
 
     def check_remote_freshness(self):
-        """Finds the most recent GFS run and checks if it's newer than local cache."""
+        """Finds the most recent GFS run and dynamically calculates the forecast hour for the current time."""
         base_url = self.settings.get("url").rstrip('/')
-        forecast_hour = self.settings.get("forecast_hour", fallback="3").zfill(3)
         now = datetime.now(timezone.utc)
 
         for day_offset in range(3):
-            date_str = (now - timedelta(days=day_offset)).strftime("%Y%m%d")
+            target_date = now - timedelta(days=day_offset)
+            date_str = target_date.strftime("%Y%m%d")
+
             for run in ["18", "12", "06", "00"]:
-                url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{forecast_hour}"
+                # Construct a datetime object for when this specific GFS run was initialized
+                run_dt = target_date.replace(hour=int(run), minute=0, second=0, microsecond=0)
+
+                # If the run initialization is in the future (can happen depending on UTC offsets), skip it
+                if run_dt > now:
+                    continue
+
+                # Calculate how many hours into the forecast we are right now
+                delta_hours = int(round((now - run_dt).total_seconds() / 3600.0))
+
+                # GFS precipitation (PRATE) is an accumulation. f000 is always 0.
+                # If we are exactly at the run time, default to f001 to get the first hour of data.
+                if delta_hours == 0:
+                    delta_hours = 1
+
+                current_forecast_hour = str(delta_hours).zfill(3)
+
+                url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{current_forecast_hour}"
+
                 try:
                     response = requests.head(url, timeout=10)
                     if response.status_code == 200:
@@ -87,7 +106,7 @@ class PrecipitationUpdater(Updater):
 
         if os.path.exists(self.grib_path):
             return None, False
-        raise RuntimeError("Could not find GFS data on NOMADS.")
+        raise RuntimeError("Could not find valid GFS data on NOMADS.")
 
     def _get_precip_range(self, grib_url):
         r = requests.get(grib_url + ".idx", timeout=30)
@@ -202,9 +221,9 @@ class PrecipitationUpdater(Updater):
 
         # 5. ENHANCEMENT: DYNAMIC ADJUSTED COLOR KEY OVERLAY
         position_map = {
-            "top-left":     [0.04, 0.89, 0.28, 0.03],
-            "top-right":    [0.68, 0.89, 0.28, 0.03],
-            "bottom-left":  [0.04, 0.08, 0.28, 0.03],
+            "top-left": [0.04, 0.89, 0.28, 0.03],
+            "top-right": [0.68, 0.89, 0.28, 0.03],
+            "bottom-left": [0.04, 0.08, 0.28, 0.03],
             "bottom-right": [0.68, 0.08, 0.28, 0.03]
         }
 
@@ -214,7 +233,6 @@ class PrecipitationUpdater(Updater):
         cbar_ax.patch.set_facecolor('#111111')
         cbar_ax.patch.set_alpha(0.4)
 
-        # Clean selection of key checkpoints from the BoundaryNorm spectrum
         key_ticks = [0.1, 1.0, 5.0, 15.0, 50.0, 100.0]
 
         cbar = plt.colorbar(
@@ -231,7 +249,6 @@ class PrecipitationUpdater(Updater):
 
         plot.save_figure(self.output_path)
 
-        # Final cleanup
         plt_close = getattr(plot, 'close', None)
         if callable(plt_close):
             plt_close()
@@ -243,7 +260,7 @@ class PrecipitationUpdater(Updater):
         try:
             url, needs_download = self.check_remote_freshness()
             if needs_download:
-                logger.info("Downloading fresh precipitation data...")
+                logger.info(f"Downloading fresh precipitation data from: {url}")
                 self.download_data(url)
 
             if needs_download or not os.path.exists(self.output_path) or self.config.has_changed:

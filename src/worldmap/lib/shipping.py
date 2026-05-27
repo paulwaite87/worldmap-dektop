@@ -165,12 +165,12 @@ class Ship:
         """Returns what is essentially the filename of the icon eg. 'red_ship_NW.png'"""
         vessel_heading = self.get_vessel_heading_str()
         if self.vessel_class == "Tanker":
-            icon_colour = "red"
+            icon_color = "red"
         elif self.vessel_class == "Cargo":
-            icon_colour = "green"
+            icon_color = "green"
         else:
-            icon_colour = "purple"
-        return f"{icon_colour}_ship_{vessel_heading}.png"
+            icon_color = "purple"
+        return f"{icon_color}_ship_{vessel_heading}.png"
 
     def get_vessel_disc_icon(self):
         suffix = "_empty.png" if self.is_unloaded() else ".png"
@@ -186,7 +186,7 @@ class Ship:
         name of the ship and then the class and subclass information"""
         return f"{self.vessel_name} {self.vessel_class}{self.vessel_subclass}"
 
-    def get_vessel_colour(self):
+    def get_vessel_color(self):
         ship_expanded_class = self.get_expanded_vessel_class()
         if ship_expanded_class == "ULTRA":
             return "DeepPink"

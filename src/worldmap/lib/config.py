@@ -89,6 +89,7 @@ class WorldMapConfig:
             set_loglevel(log_level)
 
     def save(self):
+        self._delete_secrets()
         with open(self.config_path, "w") as config_file:
             self.config.write(config_file)
 
@@ -105,6 +106,14 @@ class WorldMapConfig:
             if self.config.has_section(section):
                 if api_key:
                     self.config[section]["api_key"] = api_key
+
+    def _delete_secrets(self):
+        """Removes sensitive keys from the config object."""
+        keys_to_delete = ["api_key"]
+        for section in self.config.sections():
+            for key in keys_to_delete:
+                if self.config.has_option(section, key):
+                    self.config.remove_option(section, key)
 
     def get_section(self, section):
         if self.config.has_section(section):
@@ -136,7 +145,7 @@ class WorldMapConfig:
         self.update_setting("common", "workdir", project_root)
 
         # Clears any user-created marker files from config for testing
-        self.update_setting("xplanet", "marker_files", "")
+        self.update_setting("common", "extra_marker_files", "")
 
         # Go through each section enabling it for testing, and also
         # set the output path to a suitable file for test output
