@@ -30,10 +30,36 @@ class WindUpdater(Updater):
         self.grib_path = os.path.join(self.workdir, "data/gfs_wind.grib2")
 
     def check_remote_freshness(self):
-        """Finds the most recent GFS run and checks if it's newer than local cache."""
+        """Checks for a shared baseline first, otherwise falls back to current time logic."""
         base_url = self.settings.get("url").rstrip('/')
-        now = datetime.now(timezone.utc)
 
+        # --- NEW: Check for baseline set by Isobars ---
+        baseline = getattr(self.map_data, 'shared_state', {}).get('gfs_baseline')
+
+        if baseline:
+            date_str = baseline['date_str']
+            run = baseline['run']
+            # Wind is instantaneous, so f000 exactly matches the initialization time
+            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f000"
+
+            try:
+                response = requests.head(url, timeout=10)
+                if response.status_code == 200:
+                    remote_mtime_str = response.headers.get('Last-Modified')
+                    if remote_mtime_str:
+                        remote_mtime = datetime.strptime(remote_mtime_str, '%a, %d %b %Y %H:%M:%S %Z').replace(
+                            tzinfo=timezone.utc)
+                        if os.path.exists(self.grib_path):
+                            local_mtime = datetime.fromtimestamp(os.path.getmtime(self.grib_path), tz=timezone.utc)
+                            if remote_mtime <= local_mtime:
+                                return url, False
+                    return url, True
+            except requests.RequestException:
+                pass
+            logger.warning("Failed to reach baseline GFS wind data. Falling back to dynamic search.")
+
+        # --- Standard Fallback Logic ---
+        now = datetime.now(timezone.utc)
         for day_offset in range(3):
             date_str = (now - timedelta(days=day_offset)).strftime("%Y%m%d")
             for run in ["18", "12", "06", "00"]:
@@ -162,7 +188,6 @@ class WindUpdater(Updater):
         plot.save_figure(self.output_path)
         ds.close()
         logger.debug("Finished Wind plot...saving")
-
 
     def run(self):
         self.exit_if_disabled()

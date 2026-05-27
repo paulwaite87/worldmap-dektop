@@ -41,28 +41,23 @@ class MapBuilder:
     def __init__(self, config_path: str):
         self.config = WorldMapConfig(config_path)
         self.map_data = MapData(self.config)
+
+        # Initialize a shared state dictionary for inter-updater communication
+        self.map_data.shared_state = {}
+
         self.starting_up = True
-
-        # Explicitly typed dictionary for tracking task completion
         self.last_run_times: Dict[str, datetime] = {}
-
-        # Flag to keep track of whether updates happened in the loop
-        # This gets reset every time a loop starts
         self.map_updated = False
-
-        # Flag to indicate isobars or clouds were updated so run composite
         self.composite_layers_updated = False
 
-        # Register the signal handler for SIGUSR1
-        # In Docker/Linux, this is often signal 10
         signal.signal(signal.SIGUSR1, self.handle_force_refresh)
 
-        # Execution order registry
+        # Execution order registry: Isobars must run before Precip/Clouds to set the baseline
         self.task_registry: List[Tuple[str, Type[Any]]] = [
-            ("clouds", CloudUpdater),
             ("isobars", IsobarUpdater),
-            ("wind", WindUpdater),
             ("precipitation", PrecipitationUpdater),
+            ("clouds", CloudUpdater),
+            ("wind", WindUpdater),
             ("sst", SSTUpdater),
             ("currents", CurrentsUpdater),
             ("waves", WavesUpdater),
@@ -74,7 +69,7 @@ class MapBuilder:
             ("satellites", SatelliteUpdater),
             ("shipping", ShippingUpdater),
             ("volcanoes", VolcanoUpdater),
-            ("xplanet", XPlanetRenderer),  # always keep renderer last
+            ("xplanet", XPlanetRenderer),
         ]
 
     def refresh_settings(self):

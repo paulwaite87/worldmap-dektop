@@ -22,15 +22,28 @@ class CloudUpdater(Updater):
         self.output_path = os.path.join(self.workdir, "data", "regions", filename)
 
     def run(self):
-        """Downloads the regional cloud layer from NASA GIBS with 3-hour caching logic."""
+        """Downloads the regional cloud layer from NASA GIBS with a baseline lookback."""
         self.exit_if_disabled()
 
         base_url = self.settings.get("url").strip('"')
         expiry_hours = self.settings.getint("expiry_hours", fallback=3)
 
-        # NASA GIBS availability logic
+        # --- NEW: Configurable lookback to prevent incomplete satellite swaths ---
+        # Default to 1 day back, but can be set to 2 in worldmap.conf if needed
+        cloud_offset = self.settings.getint("offset_days", fallback=1)
+
         now_utc = datetime.now(timezone.utc)
-        target_date = now_utc - timedelta(days=1)
+
+        # --- Align with GFS baseline if available, but apply the lookback ---
+        baseline = getattr(self.map_data, 'shared_state', {}).get('gfs_baseline')
+        if baseline:
+            # We must offset from the baseline because GIBS cannot provide "today" in full yet.
+            target_date = baseline['timestamp'] - timedelta(days=cloud_offset)
+            logger.debug(
+                f"Clouds syncing to Isobar baseline with a -{cloud_offset} day offset: {target_date.strftime('%Y-%m-%d')}")
+        else:
+            target_date = now_utc - timedelta(days=cloud_offset)
+
         time_param = target_date.strftime("%Y-%m-%d")
 
         # Dynamically construct the Bounding Box for the target region using the bbox list
@@ -56,7 +69,7 @@ class CloudUpdater(Updater):
         full_url = f"{base_url}?{query_string}"
 
         # --- Cache Logic ---
-        # Only download if the file does not exist OR the file is older than 3 hours
+        # Only download if the file does not exist OR the file is older than the expiry limit
         if os.path.exists(self.output_path):
             file_mtime = datetime.fromtimestamp(os.path.getmtime(self.output_path), tz=timezone.utc)
             age = now_utc - file_mtime

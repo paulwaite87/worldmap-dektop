@@ -59,32 +59,50 @@ class PrecipitationUpdater(Updater):
         }
 
     def check_remote_freshness(self):
-        """Finds the most recent GFS run and dynamically calculates the forecast hour for the current time."""
+        """Checks for a shared baseline first, otherwise falls back to current time logic."""
         base_url = self.settings.get("url").rstrip('/')
-        now = datetime.now(timezone.utc)
 
+        # --- Check for baseline set by Isobars ---
+        baseline = getattr(self.map_data, 'shared_state', {}).get('gfs_baseline')
+
+        if baseline:
+            date_str = baseline['date_str']
+            run = baseline['run']
+            # Precip at f000 is 0. We use f001 to get the first hour of accumulation for this run.
+            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f001"
+
+            try:
+                response = requests.head(url, timeout=10)
+                if response.status_code == 200:
+                    remote_mtime_str = response.headers.get('Last-Modified')
+                    if remote_mtime_str:
+                        remote_mtime = datetime.strptime(remote_mtime_str, '%a, %d %b %Y %H:%M:%S %Z').replace(
+                            tzinfo=timezone.utc)
+                        if os.path.exists(self.grib_path):
+                            local_mtime = datetime.fromtimestamp(os.path.getmtime(self.grib_path), tz=timezone.utc)
+                            if remote_mtime <= local_mtime:
+                                return url, False
+                    return url, True
+            except requests.RequestException:
+                pass
+            logger.warning("Failed to reach baseline GFS precip data. Falling back to dynamic search.")
+
+        # --- Standard Fallback Logic ---
+        now = datetime.now(timezone.utc)
         for day_offset in range(3):
             target_date = now - timedelta(days=day_offset)
             date_str = target_date.strftime("%Y%m%d")
 
             for run in ["18", "12", "06", "00"]:
-                # Construct a datetime object for when this specific GFS run was initialized
                 run_dt = target_date.replace(hour=int(run), minute=0, second=0, microsecond=0)
-
-                # If the run initialization is in the future (can happen depending on UTC offsets), skip it
                 if run_dt > now:
                     continue
 
-                # Calculate how many hours into the forecast we are right now
                 delta_hours = int(round((now - run_dt).total_seconds() / 3600.0))
-
-                # GFS precipitation (PRATE) is an accumulation. f000 is always 0.
-                # If we are exactly at the run time, default to f001 to get the first hour of data.
                 if delta_hours == 0:
                     delta_hours = 1
 
                 current_forecast_hour = str(delta_hours).zfill(3)
-
                 url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{current_forecast_hour}"
 
                 try:
@@ -94,12 +112,10 @@ class PrecipitationUpdater(Updater):
                         if remote_mtime_str:
                             remote_mtime = datetime.strptime(remote_mtime_str, '%a, %d %b %Y %H:%M:%S %Z').replace(
                                 tzinfo=timezone.utc)
-
                             if os.path.exists(self.grib_path):
                                 local_mtime = datetime.fromtimestamp(os.path.getmtime(self.grib_path), tz=timezone.utc)
                                 if remote_mtime <= local_mtime:
                                     return url, False
-
                         return url, True
                 except requests.RequestException:
                     continue

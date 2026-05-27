@@ -198,6 +198,7 @@ class MapData:
     def __init__(self, config: WorldMapConfig):
         self.config = config
         self.region = None
+        self.shared_state = {}
         self.db = Database()
         self.refresh()
 
