@@ -75,6 +75,10 @@ class XPlanetRenderer(Updater):
 
         return day_path, night_path
 
+    def fix_color(self, color: str):
+        """Fix #nnnnnn -> 0xnnnnnn"""
+        return f"0x{color[1:]}" if color.startswith('#') else color
+
     def run(self):
         """Executes XPlanet using a dynamically generated configuration file."""
         self.exit_if_disabled()
@@ -91,7 +95,7 @@ class XPlanetRenderer(Updater):
         with open(temp_conf_path, "w") as f:
             f.write("[earth]\n")
             f.write('"Earth"\n')
-            f.write(f'color={self.fill_default_color}\n')
+            f.write(f'color={self.fix_color(self.fill_default_color)}\n')
             f.write(f"map={day_map}\n")
             f.write(f"night_map={night_map}\n")
             # Xplanet mapbounds={NorthWest_Lat, NorthWest_Lon, SouthEast_Lat, SouthEast_Lon}
@@ -139,9 +143,7 @@ class XPlanetRenderer(Updater):
 
             # Default style for markers if not specified
             marker_color = self.common.get("marker_default_color", "cyan")
-            if marker_color.startswith('#'):
-                marker_color = f"0x{marker_color[1:]}"
-            f.write(f'marker_color={marker_color}\n')
+            f.write(f'marker_color={self.fix_color(marker_color)}\n')
             f.write(f'marker_fontsize={self.common.getint("marker_default_fontsize", 12)}\n')
 
         # Cleanup old map files

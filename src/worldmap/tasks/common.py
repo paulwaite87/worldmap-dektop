@@ -198,6 +198,7 @@ class MapData:
     def __init__(self, config: WorldMapConfig):
         self.config = config
         self.region = None
+        self.shared_state = {}
         self.db = Database()
         self.refresh()
 
@@ -243,7 +244,12 @@ class Plot:
         self.ax.patch.set_alpha(0)
         self.fig.patch.set_alpha(0)
 
-        plt.savefig(output_path, transparent=True, bbox_inches=None, pad_inches=0)
+        # Atomic write/move to avoid timing issues
+        base, ext = os.path.splitext(output_path)
+        tmp_img = f"{base}.tmp{ext}"
+        plt.savefig(tmp_img, transparent=True, bbox_inches=None, pad_inches=0)
+        os.replace(tmp_img, output_path)
+
         plt.close(self.fig)
 
 class Updater:

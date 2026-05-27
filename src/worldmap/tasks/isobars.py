@@ -30,23 +30,32 @@ class IsobarUpdater(Updater):
         self.grib_path = os.path.join(self.workdir, "data/gfs_isobars.grib2")
 
     def check_remote_freshness(self):
-        """Finds the most recent GFS run and checks if it's newer than local cache."""
+        """Finds the most recent GFS run, sets it as the baseline, and checks local cache."""
         base_url = self.settings.get("url").rstrip('/')
         now = datetime.now(timezone.utc)
 
         for day_offset in range(3):
-            date_str = (now - timedelta(days=day_offset)).strftime("%Y%m%d")
+            target_date = now - timedelta(days=day_offset)
+            date_str = target_date.strftime("%Y%m%d")
+
             for run in ["18", "12", "06", "00"]:
                 url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f000"
                 try:
-                    # GFS on NOMADS supports HEAD requests for freshness checks
                     response = requests.head(url, timeout=10)
                     if response.status_code == 200:
+
+                        # --- NEW: Set the baseline for other updaters ---
+                        run_timestamp = target_date.replace(hour=int(run), minute=0, second=0, microsecond=0)
+                        self.map_data.shared_state['gfs_baseline'] = {
+                            'date_str': date_str,
+                            'run': run,
+                            'timestamp': run_timestamp
+                        }
+
                         remote_mtime_str = response.headers.get('Last-Modified')
                         if remote_mtime_str:
                             remote_mtime = datetime.strptime(remote_mtime_str, '%a, %d %b %Y %H:%M:%S %Z').replace(
                                 tzinfo=timezone.utc)
-
                             if os.path.exists(self.grib_path):
                                 local_mtime = datetime.fromtimestamp(os.path.getmtime(self.grib_path), tz=timezone.utc)
                                 if remote_mtime <= local_mtime:

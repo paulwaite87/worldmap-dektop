@@ -66,3 +66,8 @@ dev-dependencies = [
     "ruff>=0.15.11",
     "watchdog>=6.0.0",
 ]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:numpy.ndarray size changed:RuntimeWarning"
+]
