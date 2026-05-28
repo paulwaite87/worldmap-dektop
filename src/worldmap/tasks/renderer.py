@@ -128,7 +128,7 @@ class XPlanetRenderer(Updater):
             # Show satellites - these are always in the 'satellites' folder
             # and the filename is always 'sat_file'.
             if self.config.section_enabled("satellites"):
-                f.write(f'satellite_file=sat_file\n')
+                f.write('satellite_file=sat_file\n')
 
             # Show shipping activity
             if self.config.section_enabled("shipping"):

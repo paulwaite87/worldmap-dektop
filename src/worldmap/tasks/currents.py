@@ -135,7 +135,7 @@ class CurrentsUpdater(Updater):
 
         if not np.any(mask):
             ds.close()
-            raise ValueError(f"No ocean current data points found inside bbox.")
+            raise ValueError("No ocean current data points found inside bbox.")
 
         y_indices, x_indices = np.where(mask)
         raw_height = y_indices.max() - y_indices.min() + 1
@@ -287,14 +287,14 @@ class CurrentsUpdater(Updater):
         if callable(plt_close):
             plt_close()
 
-        logger.debug(f"Finished Currents plot. Memory cleared.")
+        logger.debug("Finished Currents plot. Memory cleared.")
 
     def run(self):
         self.exit_if_disabled()
         try:
             url, needs_download = self.check_remote_freshness()
             if needs_download:
-                logger.info(f"Downloading fresh RTOFS currents data...")
+                logger.info("Downloading fresh RTOFS currents data...")
                 self.download_data(url)
 
             if needs_download or not os.path.exists(self.output_path) or self.config.has_changed:

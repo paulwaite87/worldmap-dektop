@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import os
 import logging
-import gc
 import requests
 import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.image as mpimg
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -41,10 +39,12 @@ class StormUpdater(Updater):
     def _parse_latlon(self, lat_str, lon_str):
         """Converts ATCF lat/lon strings (e.g., '145N', '0805W') to floats."""
         lat_val = float(lat_str[:-1]) * 0.1
-        if lat_str.endswith("S"): lat_val = -lat_val
+        if lat_str.endswith("S"):
+            lat_val = -lat_val
 
         lon_val = float(lon_str[:-1]) * 0.1
-        if lon_str.endswith("W"): lon_val = -lon_val
+        if lon_str.endswith("W"):
+            lon_val = -lon_val
         return lat_val, lon_val
 
     def _parse_b_deck(self, url, now_utc, expiry_days):
@@ -266,7 +266,7 @@ class StormUpdater(Updater):
 
         plot.save_figure(self.output_path)
 
-        logger.info(f"Successfully rendered active storms layer.")
+        logger.info("Successfully rendered active storms layer.")
 
     def run(self):
         self.exit_if_disabled()

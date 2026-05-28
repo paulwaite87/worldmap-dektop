@@ -2,7 +2,6 @@
 import os
 import sys
 import logging
-from pathlib import Path
 
 # Need Pillow for the transparency and compositing
 from PIL import Image
@@ -103,7 +102,7 @@ class CompositeUpdater(Updater):
 
         # Case: Compositing process
         try:
-            logger.debug(f"Compositing layers: {[l[0] for l in layers]}...")
+            logger.debug(f"Compositing layers: {[layer[0] for layer in layers]}...")
 
             # Use target dimensions from the MapData object to create a standardized canvas.
             # This prevents clipping when a single layer's aspect ratio differs from the background.

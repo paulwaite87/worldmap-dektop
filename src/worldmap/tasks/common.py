@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 # image used in XPlanet rendering via the 'cloud"map' option
 COMPOSITE_SECTIONS = [
     "isobars",
-    "precipitation",
     "clouds",
+    "precipitation",
     "wind",
     "sst",
     "currents",

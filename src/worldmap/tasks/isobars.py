@@ -168,7 +168,7 @@ class IsobarUpdater(Updater):
         try:
             url, needs_download = self.check_remote_freshness()
             if needs_download:
-                logger.info(f"Downloading fresh isobar data...")
+                logger.info("Downloading fresh isobar data...")
                 self.download_data(url)
 
             if needs_download or not os.path.exists(self.output_path) or self.config.has_changed:

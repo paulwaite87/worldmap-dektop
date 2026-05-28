@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-import os
 import io
-import sys
 import logging
 import requests
 import pandas as pd

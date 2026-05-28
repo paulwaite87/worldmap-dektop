@@ -4,7 +4,6 @@ import logging
 import ast
 from pathlib import Path
 
-from aiohttp.web_fileresponse import extension
 
 from worldmap.lib.logging import set_loglevel
 

@@ -182,6 +182,9 @@ class PrecipitationUpdater(Updater):
         )
 
         prate = ds_clipped["prate"].values.squeeze() * 3600.0
+        # Apply the minimum threshold to clip out trace noise
+        prate[prate < min_rate] = 0.0
+
         lons = ds_clipped.longitude.values
         lats = ds_clipped.latitude.values
 
@@ -269,7 +272,7 @@ class PrecipitationUpdater(Updater):
         if callable(plt_close):
             plt_close()
 
-        logger.debug(f"Finished Precipitation plot. Memory cleared.")
+        logger.debug("Finished Precipitation plot. Memory cleared.")
 
     def run(self):
         self.exit_if_disabled()
