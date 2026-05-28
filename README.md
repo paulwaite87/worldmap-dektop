@@ -113,25 +113,29 @@ something like this. Obviously the below example shows shipping and weather
 scanner output, which you won't see out of the box unless you already acquired
 API keys and enabled them.
 
-    shipping_collector  | 2026-05-15 15:47:11,624 [INFO] worldmap.shipping_collector: Shipping Collector Service: Starting weighted global rotation
-    weather_scanner     | 2026-05-15 15:47:11,931 [INFO] worldmap.weather_scanner: Weather Scanner Service: Starting regional scans.
-    map_builder         | 2026-05-15 15:53:23,623 [INFO] worldmap.map_builder: Map-builder scheduler run started
-    map_builder         | 2026-05-15 15:53:23,623 [INFO] worldmap.map_builder: Running scheduled task: 'clouds'
-    map_builder         | 2026-05-15 15:53:23,808 [INFO] worldmap.map_builder: Running scheduled task: 'isobars'
-    map_builder         | 2026-05-15 15:53:24,427 [INFO] worldmap.map_builder: Running scheduled task: 'precipitation'
-    map_builder         | 2026-05-15 15:53:24,543 [INFO] worldmap.map_builder: Running scheduled task: 'currents'
-    map_builder         | 2026-05-15 15:53:25,050 [INFO] worldmap.map_builder: Running scheduled task: 'composite'
-    map_builder         | 2026-05-15 15:53:28,969 [INFO] worldmap.map_builder: Running scheduled task: 'storms'
-    map_builder         | 2026-05-15 15:53:30,686 [INFO] worldmap.tasks.storms: Storm CSV cache is up to date.
-    map_builder         | 2026-05-15 15:53:30,689 [INFO] worldmap.tasks.storms: Storm markers are up to date. Skipping.
-    map_builder         | 2026-05-15 15:53:30,691 [INFO] worldmap.map_builder: Running scheduled task: 'lightning'
-    map_builder         | 2026-05-15 15:53:30,794 [INFO] worldmap.tasks.lightning: Placed 27 strikes
-    map_builder         | 2026-05-15 15:53:30,795 [INFO] worldmap.map_builder: Running scheduled task: 'quakes'
-    map_builder         | 2026-05-15 15:53:31,696 [INFO] worldmap.map_builder: Running scheduled task: 'shipping'
-    map_builder         | 2026-05-15 15:53:32,794 [INFO] worldmap.tasks.shipping: Shipping update complete. Placed 18463 ships in region.
-    map_builder         | 2026-05-15 15:53:32,829 [INFO] worldmap.map_builder: Running scheduled task: 'xplanet'
-    map_builder         | 2026-05-15 15:53:33,566 [INFO] worldmap.tasks.renderer: Successfully generated map: ./data/1778817212-regionmap.jpg
-    map_builder         | 2026-05-15 15:53:33,566 [INFO] worldmap.map_builder: Map-builder scheduler run finished
+    shipping_collector  | 2026-05-28 23:06:32,213 [INFO] worldmap.shipping_collector: Shipping Collector Service: Starting weighted global rotation
+    weather_scanner     | 2026-05-28 23:06:33,453 [INFO] worldmap.weather_scanner: Weather Scanner Service: Starting regional scans.
+    map_builder         | 2026-05-28 23:06:34,599 [INFO] worldmap.map_builder: Map-builder scheduler run started
+    map_builder         | 2026-05-28 23:06:34,599 [INFO] worldmap.map_builder: Running scheduled task: 'isobars'
+    map_builder         | 2026-05-28 23:06:34,875 [INFO] worldmap.tasks.isobars: Downloading fresh isobar data...
+    map_builder         | 2026-05-28 23:06:35,545 [INFO] worldmap.tasks.isobars: Generating Isobar plot...
+    map_builder         | 2026-05-28 23:06:37,662 [INFO] worldmap.map_builder: Running scheduled task: 'precipitation'
+    map_builder         | 2026-05-28 23:06:38,211 [INFO] worldmap.tasks.precipitation: Downloading fresh precipitation data from: https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/gfs.20260528/06/atmos/gfs.t06z.pgrb2.0p25.f001
+    map_builder         | 2026-05-28 23:06:38,974 [INFO] worldmap.tasks.precipitation: Generating Precipitation plot...
+    map_builder         | 2026-05-28 23:06:39,108 [INFO] worldmap.tasks.precipitation: Large region detected (127.2°x57.4°). Using resource-friendly global grid settings.
+    map_builder         | 2026-05-28 23:06:39,974 [INFO] worldmap.map_builder: Running scheduled task: 'clouds'
+    map_builder         | 2026-05-28 23:06:39,975 [INFO] worldmap.tasks.clouds: Fetching regional NASA GIBS clouds for 2026-05-27 (4096x2048)...
+    map_builder         | 2026-05-28 23:06:46,066 [INFO] worldmap.map_builder: Running scheduled task: 'composite'
+    map_builder         | 2026-05-28 23:06:50,236 [INFO] worldmap.map_builder: Running scheduled task: 'lightning'
+    map_builder         | 2026-05-28 23:06:50,315 [INFO] worldmap.tasks.lightning: Placed 0 strikes
+    map_builder         | 2026-05-28 23:06:50,315 [INFO] worldmap.map_builder: Running scheduled task: 'quakes'
+    map_builder         | 2026-05-28 23:06:51,149 [INFO] worldmap.map_builder: Running scheduled task: 'satellites'
+    map_builder         | 2026-05-28 23:06:51,154 [INFO] worldmap.tasks.satellites: Satellite update complete. Tracked 1/1 objects.
+    map_builder         | 2026-05-28 23:06:51,155 [INFO] worldmap.map_builder: Running scheduled task: 'shipping'
+    map_builder         | 2026-05-28 23:06:51,233 [INFO] worldmap.tasks.shipping: Shipping update complete. Placed 549 ships in region.
+    map_builder         | 2026-05-28 23:06:51,236 [INFO] worldmap.map_builder: Running scheduled task: 'xplanet'
+    map_builder         | 2026-05-28 23:06:52,024 [INFO] worldmap.tasks.renderer: Successfully generated map: ./data/1779966411-regionmap.jpg
+    map_builder         | 2026-05-28 23:06:52,024 [INFO] worldmap.map_builder: Map-builder scheduler run finished
 
 The `map_builder` is the main process which puts together all the elements which get displayed 
 on the map. This process is endlessly repeating, so your map will change through the 
