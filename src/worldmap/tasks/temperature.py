@@ -59,7 +59,7 @@ class TemperatureUpdater(Updater):
 
     def check_remote_freshness(self):
         """Finds the most recent available GFS Atmospheric GRIB2 cycle run on NOMADS."""
-        base_url = self.settings.get("url").rstrip('/')
+        base_url = self.get_base_url()
         forecast_hour = self.settings.get("forecast_hour", fallback="024").zfill(3)
         now = datetime.now(timezone.utc)
 

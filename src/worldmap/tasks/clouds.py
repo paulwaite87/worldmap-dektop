@@ -25,7 +25,7 @@ class CloudUpdater(Updater):
         """Downloads the regional cloud layer from NASA GIBS with a baseline lookback."""
         self.exit_if_disabled()
 
-        base_url = self.settings.get("url").strip('"')
+        base_url = self.get_base_url()
         expiry_hours = self.settings.getint("expiry_hours", fallback=3)
 
         # --- NEW: Configurable lookback to prevent incomplete satellite swaths ---

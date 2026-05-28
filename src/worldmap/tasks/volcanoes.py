@@ -47,7 +47,7 @@ class VolcanoUpdater(Updater):
         """Processes volcano records and generates markers."""
         self.exit_if_disabled()
 
-        base_url = self.settings.get("url")
+        base_url = self.get_base_url()
         marker_color = self.settings.get("marker_color", fallback="red")
         marker_symbol = self.settings.get("marker_symbol")
         significant_only = self.settings.getboolean("significant_only", fallback=False)

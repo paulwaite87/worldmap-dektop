@@ -53,7 +53,7 @@ class CurrentsUpdater(Updater):
 
     def check_remote_freshness(self):
         """Finds the most recent RTOFS NetCDF run and checks if it's newer than local cache."""
-        base_url = self.settings.get("url").rstrip('/')
+        base_url = self.get_base_url()
         forecast_hour = self.settings.get("forecast_hour", fallback="024").zfill(3)
         now = datetime.now(timezone.utc)
 

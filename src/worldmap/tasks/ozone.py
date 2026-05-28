@@ -33,7 +33,7 @@ class OzoneUpdater(Updater):
 
     def check_remote_freshness(self):
         """Checks for a shared baseline first, otherwise falls back to current time logic."""
-        base_url = self.settings.get("url").rstrip('/')
+        base_url = self.get_base_url()
 
         # --- Check for baseline set by Isobars ---
         baseline = getattr(self.map_data, 'shared_state', {}).get('gfs_baseline')

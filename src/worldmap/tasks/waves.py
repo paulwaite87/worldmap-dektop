@@ -57,7 +57,7 @@ class WavesUpdater(Updater):
         automatically backing off cycle-by-cycle and day-by-day if files
         are not yet published. Pulls base URL from config settings.
         """
-        base_url = self.settings.get("url").rstrip('/')
+        base_url = self.get_base_url()
         forecast_hour = self.settings.get("forecast_hour", fallback="024").zfill(3)
         now = datetime.now(timezone.utc)
 
