@@ -27,7 +27,7 @@ class WindUpdater(Updater):
         super().__init__(config, "Wind", map_data)
         self.set_output_path()
         # Persist grib path to allow freshness checks
-        self.grib_path = os.path.join(self.workdir, "data/gfs_wind.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_wind_{self.forecast_hour_str}.grib2")
 
     def check_remote_freshness(self):
         """Checks for a shared baseline first, otherwise falls back to current time logic."""
@@ -40,7 +40,7 @@ class WindUpdater(Updater):
             date_str = baseline['date_str']
             run = baseline['run']
             # Wind is instantaneous, so f000 exactly matches the initialization time
-            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f000"
+            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{self.forecast_hour_str}"
 
             try:
                 response = requests.head(url, timeout=10)

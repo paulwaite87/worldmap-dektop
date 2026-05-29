@@ -29,7 +29,7 @@ class OzoneUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Ozone", map_data)
         self.set_output_path()
-        self.grib_path = os.path.join(self.workdir, "data/gfs_ozone.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_ozone_{self.forecast_hour_str}.grib2")
 
     def check_remote_freshness(self):
         """Checks for a shared baseline first, otherwise falls back to current time logic."""
@@ -42,7 +42,7 @@ class OzoneUpdater(Updater):
             date_str = baseline['date_str']
             run = baseline['run']
             # Ozone is an instantaneous measurement, so we use f000 to match the exact run time
-            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f000"
+            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{self.forecast_hour_str}"
 
             try:
                 response = requests.head(url, timeout=10)

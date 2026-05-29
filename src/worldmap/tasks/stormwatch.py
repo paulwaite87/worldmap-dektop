@@ -26,7 +26,7 @@ class StormwatchUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Stormwatch", map_data)
         self.set_output_path()
-        self.grib_path = os.path.join(self.workdir, "data/gfs_cape.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_cape_{self.forecast_hour_str}.grib2")
 
     def check_remote_freshness(self):
         """Syncs with the shared GFS baseline to ensure timeline consistency."""
@@ -66,7 +66,7 @@ class StormwatchUpdater(Updater):
                 if run_dt > now:
                     continue
 
-                url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f000"
+                url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{self.forecast_hour_str}"
                 try:
                     response = requests.head(url, timeout=10)
                     if response.status_code == 200:

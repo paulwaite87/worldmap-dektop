@@ -23,7 +23,7 @@ class WavesUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Waves", map_data)
         self.set_output_path()
-        self.grib_path = os.path.join(self.workdir, "data/gfs_wave.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_waves_{self.forecast_hour_str}.grib2")
 
         # DESIGNED GRADIENTS FOR WAVE HEIGHT INTENSITY
         self.PALETTES = {
@@ -58,7 +58,6 @@ class WavesUpdater(Updater):
         are not yet published. Pulls base URL from config settings.
         """
         base_url = self.get_base_url()
-        forecast_hour = self.settings.get("forecast_hour", fallback="024").zfill(3)
         now = datetime.now(timezone.utc)
 
         cycles_to_try = ["18", "12", "06", "00"]
@@ -70,7 +69,7 @@ class WavesUpdater(Updater):
                 if day_offset == 0 and int(cycle) > now.hour:
                     continue
 
-                url = f"{base_url}/gfs.{date_str}/{cycle}/wave/gridded/gfswave.t{cycle}z.global.0p25.f{forecast_hour}.grib2"
+                url = f"{base_url}/gfs.{date_str}/{cycle}/wave/gridded/gfswave.t{cycle}z.global.0p25.f{self.forecast_hour_str}.grib2"
 
                 try:
                     logger.debug(f"Probing GFS-Wave availability: {date_str} Cycle {cycle}z...")

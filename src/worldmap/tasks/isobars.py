@@ -27,7 +27,7 @@ class IsobarUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Isobars", map_data)
         self.set_output_path()
-        self.grib_path = os.path.join(self.workdir, "data/gfs_isobars.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_isobars_{self.forecast_hour_str}.grib2")
 
     def check_remote_freshness(self):
         """Finds the most recent GFS run, sets it as the baseline, and checks local cache."""
@@ -39,7 +39,7 @@ class IsobarUpdater(Updater):
             date_str = target_date.strftime("%Y%m%d")
 
             for run in ["18", "12", "06", "00"]:
-                url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f000"
+                url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{self.forecast_hour_str}"
                 try:
                     response = requests.head(url, timeout=10)
                     if response.status_code == 200:

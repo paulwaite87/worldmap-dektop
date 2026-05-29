@@ -552,6 +552,16 @@
                                 <input type="range" class="form-range" id="${item.flatKey}" min="6" max="64" step="1" value="${initialSize}"
                                        oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + 'px'">
                             `;
+                        } else if (item.option.includes('forecast_hour')) {
+                            const initialOffset = parseInt(item.value) || 1;
+                            col.innerHTML = `
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label small text-white-50 fw-bold mb-0">${customLabelText}</label>
+                                    <span class="badge bg-success text-dark fw-bold" id="badge-${item.flatKey}">${initialOffset}h</span>
+                                </div>
+                                <input type="range" class="form-range" id="${item.flatKey}" min="0" max="192" step="4" value="${initialOffset}"
+                                       oninput="document.getElementById('badge-${item.flatKey}').innerText = this.value + 'h'">
+                            `;
                         } else if (item.option.includes('linewidth')) {
                             const initialWidth = parseFloat(item.value) !== undefined ? parseFloat(item.value) : 1.0;
                             col.innerHTML = `

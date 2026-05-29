@@ -274,6 +274,10 @@ class Updater:
         self.outfile = self.settings.get("outfile", fallback="")
         self.output_path = ""
         self.enabled = self.settings.getboolean("enabled", False)
+        forecast_hour = self.common.getint("forecast_hour", fallback=1)
+        if forecast_hour == 0:
+            forecast_hour = 1
+        self.forecast_hour_str = f"{forecast_hour:03d}"
 
         # Copy map data up to this class for convenience
         self.target_width = map_data.region.target_width

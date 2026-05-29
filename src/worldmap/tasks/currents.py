@@ -23,7 +23,7 @@ class CurrentsUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Currents", map_data)
         self.set_output_path()
-        self.nc_path = os.path.join(self.workdir, "data/rtofs_currents.nc")
+        self.nc_path = os.path.join(self.workdir, f"data/rtofs_currents_{self.forecast_hour_str}.nc")
 
         # REWORKED HIGH-VISIBILITY BASE COLORS (RGB formats only)
         # Alpha channels are dynamically attached during rendering based on settings!
@@ -54,13 +54,12 @@ class CurrentsUpdater(Updater):
     def check_remote_freshness(self):
         """Finds the most recent RTOFS NetCDF run and checks if it's newer than local cache."""
         base_url = self.get_base_url()
-        forecast_hour = self.settings.get("forecast_hour", fallback="024").zfill(3)
         now = datetime.now(timezone.utc)
 
         for day_offset in range(3):
             date_str = (now - timedelta(days=day_offset)).strftime("%Y%m%d")
             urls_to_try = [
-                f"{base_url}/rtofs.{date_str}/rtofs_glo_2ds_f{forecast_hour}_prog.nc",
+                f"{base_url}/rtofs.{date_str}/rtofs_glo_2ds_f{self.forecast_hour_str}_prog.nc",
                 f"{base_url}/rtofs.{date_str}/rtofs_glo_2ds_n000_prog.nc"
             ]
 

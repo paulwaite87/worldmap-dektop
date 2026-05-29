@@ -26,7 +26,7 @@ class PrecipitationUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Precipitation", map_data)
         self.set_output_path()
-        self.grib_path = os.path.join(self.workdir, "data/gfs_precip.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_precip_{self.forecast_hour_str}.grib2")
 
         self.PALETTES = {
             "standard": [
@@ -68,8 +68,8 @@ class PrecipitationUpdater(Updater):
         if baseline:
             date_str = baseline['date_str']
             run = baseline['run']
-            # Precip at f000 is 0. We use f001 to get the first hour of accumulation for this run.
-            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f001"
+            # Using forecast hour to offset the data
+            url = f"{base_url}/gfs.{date_str}/{run}/atmos/gfs.t{run}z.pgrb2.0p25.f{self.forecast_hour_str}"
 
             try:
                 response = requests.head(url, timeout=10)

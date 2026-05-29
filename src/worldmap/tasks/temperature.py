@@ -24,7 +24,7 @@ class TemperatureUpdater(Updater):
     def __init__(self, config: WorldMapConfig, map_data: MapData):
         super().__init__(config, "Temperature", map_data)
         self.set_output_path()
-        self.grib_path = os.path.join(self.workdir, "data/gfs_temp.grib2")
+        self.grib_path = os.path.join(self.workdir, f"data/gfs_temp_{self.forecast_hour_str}.grib2")
 
         # DESIGNED GRADIENTS FOR AIR TEMPERATURE (-40C to +45C)
         self.PALETTES = {
@@ -60,7 +60,6 @@ class TemperatureUpdater(Updater):
     def check_remote_freshness(self):
         """Finds the most recent available GFS Atmospheric GRIB2 cycle run on NOMADS."""
         base_url = self.get_base_url()
-        forecast_hour = self.settings.get("forecast_hour", fallback="024").zfill(3)
         now = datetime.now(timezone.utc)
 
         cycles_to_try = ["18", "12", "06", "00"]
@@ -72,7 +71,7 @@ class TemperatureUpdater(Updater):
                 if day_offset == 0 and int(cycle) > now.hour:
                     continue
 
-                url = f"{base_url}/gfs.{date_str}/{cycle}/atmos/gfs.t{cycle}z.pgrb2.0p25.f{forecast_hour}"
+                url = f"{base_url}/gfs.{date_str}/{cycle}/atmos/gfs.t{cycle}z.pgrb2.0p25.f{self.forecast_hour_str}"
 
                 try:
                     logger.debug(f"Probing GFS-Atmos availability: {date_str} Cycle {cycle}z...")
