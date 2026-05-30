@@ -82,9 +82,23 @@ the original un-edited version that gets installed for you does have some quite
 informative comments scattered through it so to preserve those to look at anytime, 
 you could make a backup copy of the file first.
 
-Anyway, I would suggest first selecting a region on the landing page, setting up
+Here is a shot of the homepage for the configurator at `http://localhost:8180`
+
+![Configuration Homepage](docs/worldmap-config-homepage.png)
+
+I would suggest first selecting a region on that homepage, setting up
 your desktop geometry, and then in the `Atmospheric` tab just `Clouds` as a
 starting point.
+
+#### Forecasting
+The system will also allow you to display elements on the map as a forecast. On the
+configuration homepage check out the `Forecast Hours Ahead` slider. The two most
+useful elements which will show forecasts are of course Precipitation, and Isobars,
+but others will do so as well such as Stormwatch, Temperature, Waves and Wind. A
+notable exception is Clouds which are really only eye-candy as far as meteorology
+is concerned. They are built up over 24 hours as 14 photo swathes by the polar
+orbiting NOAA satellites, so are not computed out into the future like the above
+datasets.
 
 ### Control
 There is a control script for managing things.
