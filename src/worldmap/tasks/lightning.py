@@ -6,12 +6,23 @@ from .common import Updater
 
 logger = logging.getLogger(__name__)
 
+ACTIVE_STRIKE_MINS = 15
+OLDER_STRIKE_MINS = 120
+
 
 class LightningUpdater(Updater):
     def __init__(self, config, map_data):
         super().__init__(config, "Lightning", map_data)
         self.set_output_path()
-        self.age_minutes = self.settings.getint("expiry_hours", fallback=1) * 60
+        self.strike_recent_minutes = self.settings.getint(
+            "strike_recent_minutes", fallback=15
+        )
+        self.strike_keep_minutes = self.settings.getint(
+            "strike_keep_minutes", fallback=60
+        )
+        self.strike_expiry_minutes = (
+            self.settings.getint("strike_expiry_hours", fallback=1) * 60
+        )
 
     async def run(self):
         self.exit_if_disabled()
@@ -20,9 +31,14 @@ class LightningUpdater(Updater):
         # Use the bbox from your common Updater class
         lon_min, lat_min, lon_max, lat_max = self.map_region_bbox
 
-        # Fetch from DB (much faster than API tiling)
+        # Fetch from DB (much faster than API tiling). Will only
+        # return non-expired lightning strikes.
         strikes = db.get_lightning_in_region(
-            lon_min, lat_min, lon_max, lat_max, age_minutes=self.age_minutes
+            lon_min,
+            lat_min,
+            lon_max,
+            lat_max,
+            expiry_minutes=self.strike_expiry_minutes,
         )
 
         written_count = 0
@@ -33,9 +49,9 @@ class LightningUpdater(Updater):
                 # Calculate age for icon logic
                 age_mins = (now - s["timestamp"]).total_seconds() / 60
 
-                if age_mins < 5:
+                if age_mins <= self.strike_recent_minutes:
                     icon = "bolt_white.png"
-                elif age_mins < 20:
+                elif age_mins <= self.strike_keep_minutes:
                     icon = "bolt_yellow.png"
                 else:
                     icon = "bolt_red.png"
