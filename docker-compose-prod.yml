@@ -1,4 +1,5 @@
 # docker-compose.prod.yml
+name: worldmap-desktop
 services:
   # Listens to AIS stream 24/7 and populates Ship positions
   shipping_collector:
