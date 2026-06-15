@@ -3,7 +3,6 @@
 .PHONY: run stop build rebuild start-desktop-fg stop-desktop psql logs clean purge backup restore refresh-map test bash status help
 
 # Variables
-PROJECT = worldmap-desktop
 DB_USER = wmap
 DB_NAME = worldmap
 DB_SERVICE = worldmap_db
@@ -15,7 +14,7 @@ DUMP_FILE = worldmap_dump.sql
 
 ## run: Bring all containers up in background, build if required
 run:
-	docker compose up -p $(PROJECT) -d
+	docker compose up -d
 
 ## stop: Bring all containers down
 stop:
