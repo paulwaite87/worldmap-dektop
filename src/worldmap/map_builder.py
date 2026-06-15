@@ -126,12 +126,7 @@ class MapBuilder:
         if updater.section == "xplanet" and self.map_updated:
             return True
 
-        if updater.section == "satellites":
-            update_minutes = updater.settings.getint("update_minutes", fallback=10)
-            runs_per_day = int((24 * 60) / update_minutes)
-        else:
-            runs_per_day = int(updater.settings.get("runs_per_day", fallback=0))
-
+        runs_per_day = int(updater.settings.get("runs_per_day", fallback=0))
         if runs_per_day <= 0:
             return False
 

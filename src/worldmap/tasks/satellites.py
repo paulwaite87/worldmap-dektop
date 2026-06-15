@@ -22,6 +22,7 @@ class SatelliteUpdater(Updater):
         self.exit_if_disabled()
 
         base_url = self.get_base_url()
+        expiry_hours = self.settings.getint("expiry_hours", fallback=24)
         marker_color = self.settings.get("marker_color", fallback="White")
         marker_fontsize = self.settings.getint("marker_fontsize", fallback=10)
         trail_minutes = self.settings.getint("trail_minutes", fallback=5)
@@ -52,7 +53,7 @@ class SatelliteUpdater(Updater):
             # Check if cache exists and is fresh (less than 24 hours old)
             if os.path.exists(cache_file):
                 file_age_seconds = time.time() - os.path.getmtime(cache_file)
-                if file_age_seconds < 86400:  # 24 hours in seconds
+                if file_age_seconds < expiry_hours * 60:
                     logger.debug(
                         f"Using fresh cached TLE data for '{group}' ({int(file_age_seconds / 3600)}h old)."
                     )

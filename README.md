@@ -75,14 +75,14 @@ but most things will be disabled to begin with.
 
 ### Setting it up
 The configuration file is called `worldmap.conf` and it lives in the `config` folder. 
-You can either edit this file directly, or browse to `http://localhost:8180` to use
+You can either edit this file directly, or browse to `http://localhost:8280` to use
 the configuration webpage there. If you do use that page, and save some changes they
 will overwrite your `worldmap.conf` obviously. Which is absolutely fine, except
 the original un-edited version that gets installed for you does have some quite 
 informative comments scattered through it so to preserve those to look at anytime, 
 you could make a backup copy of the file first.
 
-Here is a shot of the homepage for the configurator at `http://localhost:8180`
+Here is a shot of the homepage for the configurator at `http://localhost:8280`
 
 ![Configuration Homepage](docs/worldmap-config-homepage.png)
 

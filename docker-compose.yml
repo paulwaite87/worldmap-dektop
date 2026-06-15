@@ -137,7 +137,7 @@ services:
     container_name: map_ui
     image: nginx:alpine
     ports:
-      - "8180:80"
+      - "8280:80"
     volumes:
       - ./ui:/usr/share/nginx/html:ro
     depends_on:
@@ -154,7 +154,7 @@ services:
       POSTGRES_DB: worldmap
       PGTZ: Pacific/Auckland
     ports:
-      - "15432:5432"
+      - "55432:5432"
     restart: unless-stopped
     volumes:
       - wmap-pgdata:/var/lib/postgresql/data
