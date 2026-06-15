@@ -2,8 +2,7 @@ name: worldmap-desktop
 services:
   # Listens to AIS stream 24/7 and populates Ship positions
   shipping_collector:
-    container_name: shipping_collector
-    image: worldmap:latest
+    image: worldmap_dt:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -34,7 +33,6 @@ services:
 
   # Tiles the globe/regions for lightning strikes and populates DB
   weather_scanner:
-    container_name: weather_scanner
     image: worldmap:latest
     build:
       context: .
@@ -66,7 +64,6 @@ services:
 
   # Manages map assets and rendering on a schedule
   map_builder:
-    container_name: map_builder
     image: worldmap:latest
     build:
       context: .
@@ -98,7 +95,6 @@ services:
 
   # API Core (Bridges config/db to your UI browser inputs)
   map_api:
-    container_name: map_api
     image: worldmap:latest
     build:
       context: .
@@ -135,7 +131,6 @@ services:
 
   # Static UI Container
   map_ui:
-    container_name: map_ui
     image: nginx:alpine
     ports:
       - "8280:80"
@@ -147,7 +142,6 @@ services:
       - wmap
 
   worldmap_db:
-    container_name: worldmap_db
     image: postgis/postgis:15-3.3
     environment:
       POSTGRES_USER: wmap
